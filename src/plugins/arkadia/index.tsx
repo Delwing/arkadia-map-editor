@@ -1,0 +1,137 @@
+import { useEffect, useState } from 'react';
+import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
+import { GitHubPanel } from '../github-sync/GitHubPanel';
+import { exchangeCode, setToken } from '../github-sync/auth';
+import { setSavedBytes, setMapVersion } from '../github-sync/state';
+
+const TERENY: SwatchSet = {
+  id: 'arkadia-tereny',
+  name: 'Arkadia – Tereny',
+  swatches: [
+    { id: 'ark-las',               name: 'Las',                 symbol: '', environment: 258 },
+    { id: 'ark-trakt',             name: 'Trakt',               symbol: '', environment: 257 },
+    { id: 'ark-miasto',            name: 'Miasto',              symbol: '', environment: 272 },
+    { id: 'ark-wies',              name: 'Wieś',                symbol: '', environment: 262 },
+    { id: 'ark-akweny',            name: 'Akweny wodne',        symbol: '', environment: 268 },
+    { id: 'ark-plaze',             name: 'Plaże',               symbol: '', environment: 303 },
+    { id: 'ark-gory',              name: 'Góry',                symbol: '', environment: 303 },
+    { id: 'ark-gory-przepasc',     name: 'Góry z przepaścią',   symbol: '', environment: 301 },
+    { id: 'ark-fontanny',          name: 'Fontanny lub woda',   symbol: '', environment: 200 },
+    { id: 'ark-dylizanse',         name: 'Dyliżanse',           symbol: '', environment: 267 },
+    { id: 'ark-porty',             name: 'Porty',               symbol: '', environment: 267 },
+    { id: 'ark-kowale',            name: 'Kowale',              symbol: '', environment: 266 },
+    { id: 'ark-karczmy',           name: 'Karczmy, budynki',    symbol: '', environment: 295 },
+    { id: 'ark-budynki-wazne',     name: 'Budynki – ważne!',    symbol: '', environment: 267 },
+    { id: 'ark-poczty',            name: 'Poczty',              symbol: '', environment: 269 },
+    { id: 'ark-bez-swiatla',       name: 'Bez światła',         symbol: '', environment: 261 },
+    { id: 'ark-startowka',         name: 'Startówka',           symbol: '', environment: 271 },
+    { id: 'ark-bossowie',          name: 'Bossowie, klucze',    symbol: '', environment: 202 },
+    { id: 'ark-niebezpieczne',     name: 'Niebezpieczne',       symbol: '', environment: 202 },
+  ],
+};
+
+const POI: SwatchSet = {
+  id: 'arkadia-poi',
+  name: 'Arkadia – POI',
+  swatches: [
+    { id: 'poi-P',  name: 'Poczta',                   symbol: 'P',   environment: 269 },
+    { id: 'poi-K',  name: 'Kowal',                    symbol: 'K',   environment: 266 },
+    { id: 'poi-S',  name: 'Sklep / handlarz',          symbol: 'S',   environment: 295 },
+    { id: 'poi-s',  name: 'Skup',                     symbol: 's',   environment: 295 },
+    { id: 'poi-Z',  name: 'Zielarz',                  symbol: 'Z',   environment: 258 },
+    { id: 'poi-r',  name: 'Rzemieślnik',               symbol: 'r',   environment: 295 },
+    { id: 'poi-E',  name: 'Trener zawodu',             symbol: 'E',   environment: 295 },
+    { id: 'poi-T',  name: 'Karczma',                  symbol: 'T',   environment: 295 },
+    { id: 'poi-p',  name: 'Piekarnia',                symbol: 'p',   environment: 295 },
+    { id: 'poi-a',  name: 'Sprzedawca zwierząt',      symbol: 'a',   environment: 295 },
+    { id: 'poi-tb', name: 'Tablica ogłoszeń',          symbol: '[]',  environment: 295 },
+    { id: 'poi-m',  name: 'Rzeźnik',                  symbol: 'm',   environment: 295 },
+    { id: 'poi-B',  name: 'Biblioteka',               symbol: 'B',   environment: 295 },
+    { id: 'poi-G',  name: 'Gildia podróżnicza',        symbol: 'G',   environment: 295 },
+    { id: 'poi-A',  name: 'Aukcje / sklep gildiowy',  symbol: 'A',   environment: 295 },
+    { id: 'poi-W',  name: 'Wozownia',                 symbol: 'W',   environment: 295 },
+    { id: 'poi-u',  name: 'Urna',                     symbol: 'u',   environment: 295 },
+    { id: 'poi-J',  name: 'Jubiler / złotnik',         symbol: 'J',   environment: 295 },
+    { id: 'poi-$',  name: 'Bank / kantor',            symbol: '$',   environment: 295 },
+    { id: 'poi-C',  name: 'Kasyno',                   symbol: 'C',   environment: 295 },
+    { id: 'poi-k',  name: 'Krawiec',                  symbol: 'k',   environment: 295 },
+    { id: 'poi-F',  name: 'Fryzjer',                  symbol: 'F',   environment: 295 },
+    { id: 'poi-+',  name: 'Świątynia / kapliczka',    symbol: '+',   environment: 295 },
+  ],
+};
+
+function OAuthCallback() {
+  const [msg, setMsg] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    // Running inside the OAuth popup — hand the code (or error) back and close.
+    const error = params.get('error');
+    if (window.opener && (code || error)) {
+      window.opener.postMessage({ type: 'github-oauth', code, error }, window.location.origin);
+      window.close();
+      return;
+    }
+
+    // Running in the main window — listen for the code from the popup.
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.data?.type !== 'github-oauth') return;
+      if (e.data.error) { setMsg(`Login failed: ${e.data.error}`); return; }
+      setMsg('Completing GitHub login…');
+      exchangeCode(e.data.code)
+        .then((token) => { setToken(token); setMsg(''); })
+        .catch((err: Error) => setMsg(`Login failed: ${err.message}`));
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
+  if (!msg) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.6)', zIndex: 1000,
+    }} onClick={() => setMsg('')}>
+      <div style={{ background: '#1e1e2e', padding: 24, borderRadius: 8, color: '#cdd6f4' }}>
+        {msg}
+      </div>
+    </div>
+  );
+}
+
+const plugin: EditorPlugin = {
+  async onAppReady() {},
+
+  onMapOpened(map) {
+    setMapVersion(map.mUserData?.['version'] ?? null);
+  },
+
+  onMapClosed() {
+    setMapVersion(null);
+  },
+
+  onMapSave(bytes) {
+    setSavedBytes(bytes);
+  },
+
+  swatchSets() {
+    return [TERENY, POI];
+  },
+
+  sidebarTabs() {
+    return [{
+      id: 'github',
+      label: 'Arkadia',
+      render: () => <GitHubPanel />,
+    }];
+  },
+
+  renderOverlay() {
+    return <OAuthCallback />;
+  },
+};
+
+export default plugin;

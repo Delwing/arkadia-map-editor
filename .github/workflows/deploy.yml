@@ -1,0 +1,72 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout arkadia-map-editor
+        uses: actions/checkout@v4
+        with:
+          path: arkadia-map-editor
+
+      - name: Checkout mudlet-map-editor
+        uses: actions/checkout@v4
+        with:
+          repository: Delwing/mudlet-map-editor
+          path: mudlet-map-editor
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: arkadia-map-editor/package-lock.json
+
+      - name: Install mudlet-map-editor dependencies
+        run: npm install
+        working-directory: mudlet-map-editor
+
+      - name: Build mudlet-map-editor lib
+        run: npm run build:lib
+        working-directory: mudlet-map-editor
+
+      - name: Install arkadia-map-editor dependencies
+        run: npm install
+        working-directory: arkadia-map-editor
+
+      - name: Build
+        run: npm run build
+        working-directory: arkadia-map-editor
+        env:
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
+          VITE_LOCK_API_URL: ${{ secrets.VITE_LOCK_API_URL }}
+          VITE_GITHUB_REPO: Delwing/arkadia-mapa
+          VITE_GITHUB_MAP_FILE: map_master3.dat
+          VITE_GITHUB_BRANCH: development
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: arkadia-map-editor/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
