@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { pushCommand, store } from 'mudlet-map-editor';
 import arkadiaLogo from './arkadia-logo.svg';
@@ -29,6 +29,11 @@ function blankEntry(roomId: number): GpsEntry {
   return { room_id: roomId, gps_string_lines: [], line_delta: 0 };
 }
 
+function resizeTextarea(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
   entry: GpsEntry;
   idx: number;
@@ -36,6 +41,10 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
   onUpdate: (patch: Partial<GpsEntry>) => void;
   onRemove: () => void;
 }) {
+  const textareaRef = useCallback((el: HTMLTextAreaElement | null) => {
+    if (el) resizeTextarea(el);
+  }, []);
+
   return (
     <div className="gps-entry">
       <div className="gps-entry-header">
@@ -57,10 +66,11 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         <label className="gps-field-label">Trigger lines</label>
         <textarea
           key={`gps-lines-${idx}-${entry.gps_string_lines.join('\n')}`}
+          ref={textareaRef}
           className="gps-textarea"
           defaultValue={entry.gps_string_lines.join('\n')}
-          rows={Math.max(2, entry.gps_string_lines.length)}
           placeholder="one trigger line per line"
+          onInput={(e) => resizeTextarea(e.currentTarget)}
           onBlur={(e) => {
             const lines = e.target.value.split('\n').filter((l) => l.length > 0);
             onUpdate({ gps_string_lines: lines });
@@ -107,6 +117,11 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
   onCancel: () => void;
 }) {
   const [lines, setLines] = useState(draft.gps_string_lines.join('\n'));
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) resizeTextarea(textareaRef.current);
+  }, [lines]);
 
   return (
     <div className="gps-entry gps-entry--add">
@@ -127,10 +142,11 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
       <div className="gps-field">
         <label className="gps-field-label">Trigger lines</label>
         <textarea
+          ref={textareaRef}
           className="gps-textarea"
           value={lines}
-          rows={3}
           placeholder="one trigger line per line"
+          onInput={(e) => resizeTextarea(e.currentTarget)}
           onChange={(e) => setLines(e.target.value)}
           onBlur={() => onChange({ gps_string_lines: lines.split('\n').filter((l) => l.length > 0) })}
         />
