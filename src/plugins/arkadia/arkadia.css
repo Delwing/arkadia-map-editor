@@ -1,0 +1,186 @@
+.ark-input {
+  background: rgba(6, 9, 16, 0.6);
+  color: #e6e9ef;
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 5px;
+  height: 22px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ark-input:focus {
+  outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+/* ── GPS section ── */
+
+.gps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gps-entry {
+  background: rgba(8, 12, 20, 0.55);
+  border: 1px solid rgba(143, 184, 255, 0.1);
+  border-radius: 5px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gps-entry--add {
+  border-color: rgba(143, 184, 255, 0.25);
+}
+
+.gps-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gps-entry-index {
+  font-size: 10px;
+  color: #55606f;
+}
+
+.gps-list .gps-area-select {
+  font-size: 12px;
+  background: rgba(6, 9, 16, 0.6);
+  color: #e6e9ef;
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  padding: 2px 5px;
+  height: 22px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.gps-list .gps-area-select:focus {
+  outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+.gps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gps-field-label {
+  font-size: 10px;
+  color: #55606f;
+  user-select: none;
+}
+
+.gps-textarea {
+  background: rgba(6, 9, 16, 0.6);
+  color: #e6e9ef;
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 6px;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gps-textarea:focus {
+  outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+.gps-small-input {
+  background: rgba(6, 9, 16, 0.6);
+  color: #e6e9ef;
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 5px;
+  height: 22px;
+  width: 70px;
+}
+
+.gps-small-input:focus {
+  outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+.gps-within-input {
+  background: rgba(6, 9, 16, 0.6);
+  color: #e6e9ef;
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 2px 5px;
+  height: 22px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gps-within-input:focus {
+  outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+.gps-add-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.gps-list .gps-add-actions button {
+  flex: 1;
+  font-size: 12px;
+  background: rgba(31, 42, 60, 0.5);
+  border: 1px solid rgba(143, 184, 255, 0.12);
+  border-radius: 4px;
+  color: #8fb8ff;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.gps-list .gps-add-actions button:hover {
+  background: rgba(52, 100, 168, 0.3);
+}
+
+.gps-list .gps-add-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.gps-empty {
+  color: #55606f;
+  font-size: 12px;
+  padding: 4px 2px;
+}
+
+.gps-list .gps-add-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(31, 42, 60, 0.35);
+  border: 1px dashed rgba(143, 184, 255, 0.18);
+  border-radius: 4px;
+  color: #4a5568;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 8px;
+  transition: color 0.12s, border-color 0.12s;
+  text-align: left;
+}
+
+.gps-list .gps-add-btn:hover {
+  color: #8fb8ff;
+  border-color: rgba(143, 184, 255, 0.35);
+}

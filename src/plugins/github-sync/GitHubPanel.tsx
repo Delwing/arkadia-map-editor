@@ -128,15 +128,16 @@ export function GitHubPanel() {
     return (
         <div className="panel-content">
             <h3>Arkadia Sync</h3>
-            {user && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <img src={user.avatar_url} alt="" width={24} height={24} style={{ borderRadius: '50%' }} />
-                    <span>{user.login}</span>
-                    <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); setHasLock(false); }}>
-                        Logout
-                    </button>
-                </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                {user
+                    ? <img src={user.avatar_url} alt="" width={24} height={24} style={{ borderRadius: '50%', flexShrink: 0 }} />
+                    : <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
+                }
+                <span>{user?.login ?? ''}</span>
+                <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); setHasLock(false); }}>
+                    Logout
+                </button>
+            </div>
 
             <div style={{ marginBottom: 12, fontSize: '0.85em' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

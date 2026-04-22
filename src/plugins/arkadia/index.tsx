@@ -3,6 +3,9 @@ import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
 import { exchangeCode, setToken } from '../github-sync/auth';
 import { setSavedBytes, setMapVersion } from '../github-sync/state';
+import { DirBindSection } from './DirBindSection';
+import { TeamFollowSection } from './TeamFollowSection';
+import { GPSSection } from './GPSSection';
 
 const TERENY: SwatchSet = {
   id: 'arkadia-tereny',
@@ -131,6 +134,14 @@ const plugin: EditorPlugin = {
 
   renderOverlay() {
     return <OAuthCallback />;
+  },
+
+  roomPanelSections() {
+    return [
+      { id: 'arkadia-dir-bind', render: (props) => <DirBindSection {...props} /> },
+      { id: 'arkadia-team-follow', render: (props) => <TeamFollowSection {...props} /> },
+      { id: 'arkadia-gps', render: (props) => <GPSSection {...props} /> },
+    ];
   },
 };
 

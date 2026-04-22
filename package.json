@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "mudlet-map-editor": "file:../mudlet-map-editor",
+    "mudlet-map-editor": "0.2.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
