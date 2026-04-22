@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const fsStub = fileURLToPath(new URL('../mudlet-map-editor/src/shims/fs-stub.ts', import.meta.url));
 
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH ?? '/',
+  base: '.',
   plugins: [
     react(),
     nodePolyfills({
