@@ -12,21 +12,26 @@ interface GpsEntry {
   line_delta: number;
   area_name?: string;
   within_room_ids?: number[];
+  _uid?: string; // UI-only stable key, stripped before saving
 }
+
+let _uidSeq = 0;
+function nextUid() { return `gps-${++_uidSeq}`; }
 
 function parseGps(data: Record<string, string> | undefined): GpsEntry[] {
   const raw = data?.[GPS_KEY];
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((e: GpsEntry) => ({ ...e, _uid: nextUid() }));
   } catch {
     return [];
   }
 }
 
 function blankEntry(roomId: number): GpsEntry {
-  return { room_id: roomId, gps_string_lines: [], line_delta: 0 };
+  return { room_id: roomId, gps_string_lines: [], line_delta: 0, _uid: nextUid() };
 }
 
 function resizeTriggerTextarea(el: HTMLTextAreaElement) {
@@ -242,8 +247,9 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
   const areaNames = Object.values(map.areaNames).sort();
 
   function applyUpdate(next: GpsEntry[]) {
+    const toSave = next.map(({ _uid: _, ...e }) => e);
     const from = room.userData?.[GPS_KEY] ?? null;
-    const to = next.length ? JSON.stringify(next) : null;
+    const to = toSave.length ? JSON.stringify(toSave) : null;
     if (from === to) return;
     pushCommand({ kind: 'setUserDataEntry', roomId, key: GPS_KEY, from, to }, sceneRef.current);
     sceneRef.current?.refresh();
@@ -275,7 +281,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
       <div className="gps-list">
         {entries.map((entry, idx) => (
           <GpsEntryRow
-            key={`${roomId}-${idx}`}
+            key={entry._uid}
             entry={entry}
             idx={idx}
             areaNames={areaNames}
