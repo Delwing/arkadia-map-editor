@@ -81,22 +81,100 @@
   user-select: none;
 }
 
-.gps-textarea {
+.gps-line-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(143, 184, 255, 0.1);
+  border-radius: 8px;
+  color: #8fb8ff;
+  font-size: 9px;
+  min-width: 16px;
+  height: 13px;
+  padding: 0 4px;
+  margin-left: 5px;
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+.gps-trigger-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gps-trigger-line-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.gps-trigger-line-num {
+  font-size: 9px;
+  color: #3a4a5a;
+  min-width: 14px;
+  text-align: right;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.gps-trigger-line-input {
+  flex: 1;
+  min-width: 0;
   background: rgba(6, 9, 16, 0.6);
   color: #e6e9ef;
   border: 1px solid rgba(143, 184, 255, 0.15);
   border-radius: 4px;
   font-size: 12px;
   font-family: inherit;
-  padding: 4px 6px;
+  line-height: 1.4;
+  padding: 2px 5px;
+  box-sizing: border-box;
   resize: none;
   overflow: hidden;
-  width: 100%;
-  box-sizing: border-box;
 }
 
-.gps-textarea:focus {
+.gps-trigger-line-input:focus {
   outline: none;
+  border-color: rgba(143, 184, 255, 0.35);
+}
+
+.gps-trigger-line-remove {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  color: #3a4a5a;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+  transition: color 0.1s;
+}
+
+.gps-trigger-line-remove:hover {
+  color: #c0cfe6;
+}
+
+.gps-trigger-line-add {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 1px dashed rgba(143, 184, 255, 0.12);
+  border-radius: 4px;
+  color: #3a4a5a;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: inherit;
+  padding: 2px 6px;
+  text-align: left;
+  margin-top: 1px;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.gps-trigger-line-add:hover {
+  color: #8fb8ff;
   border-color: rgba(143, 184, 255, 0.35);
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { pushCommand, store } from 'mudlet-map-editor';
 import arkadiaLogo from './arkadia-logo.svg';
@@ -29,9 +29,61 @@ function blankEntry(roomId: number): GpsEntry {
   return { room_id: roomId, gps_string_lines: [], line_delta: 0 };
 }
 
-function resizeTextarea(el: HTMLTextAreaElement) {
+function resizeTriggerTextarea(el: HTMLTextAreaElement) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+function TriggerLinesList({
+  lines,
+  onChange,
+  onCommit,
+}: {
+  lines: string[];
+  onChange: (lines: string[]) => void;
+  onCommit?: (lines: string[]) => void;
+}) {
+  const update = (i: number, val: string) => {
+    const next = [...lines];
+    next[i] = val;
+    onChange(next);
+  };
+
+  const commit = () => onCommit?.(lines.filter((l) => l.length > 0));
+
+  const remove = (i: number) => {
+    const next = lines.filter((_, j) => j !== i);
+    onChange(next);
+    onCommit?.(next.filter((l) => l.length > 0));
+  };
+
+  const add = () => onChange([...lines, '']);
+
+  return (
+    <div className="gps-trigger-lines">
+      {lines.map((line, i) => (
+        <div key={i} className="gps-trigger-line-row">
+          <span className="gps-trigger-line-num">{i + 1}</span>
+          <textarea
+            className="gps-trigger-line-input"
+            value={line}
+            placeholder="trigger pattern"
+            rows={1}
+            ref={(el) => { if (el) resizeTriggerTextarea(el); }}
+            onChange={(e) => { update(i, e.target.value); resizeTriggerTextarea(e.currentTarget); }}
+            onBlur={commit}
+          />
+          <button
+            type="button"
+            className="gps-trigger-line-remove"
+            onClick={() => remove(i)}
+            title="Remove line"
+          >×</button>
+        </div>
+      ))}
+      <button type="button" className="gps-trigger-line-add" onClick={add}>+ add line</button>
+    </div>
+  );
 }
 
 function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
@@ -41,9 +93,8 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
   onUpdate: (patch: Partial<GpsEntry>) => void;
   onRemove: () => void;
 }) {
-  const textareaRef = useCallback((el: HTMLTextAreaElement | null) => {
-    if (el) resizeTextarea(el);
-  }, []);
+  const [localLines, setLocalLines] = useState(entry.gps_string_lines);
+  const cleanCount = localLines.filter((l) => l.length > 0).length;
 
   return (
     <div className="gps-entry">
@@ -63,18 +114,14 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         </select>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Trigger lines</label>
-        <textarea
-          key={`gps-lines-${idx}-${entry.gps_string_lines.join('\n')}`}
-          ref={textareaRef}
-          className="gps-textarea"
-          defaultValue={entry.gps_string_lines.join('\n')}
-          placeholder="one trigger line per line"
-          onInput={(e) => resizeTextarea(e.currentTarget)}
-          onBlur={(e) => {
-            const lines = e.target.value.split('\n').filter((l) => l.length > 0);
-            onUpdate({ gps_string_lines: lines });
-          }}
+        <label className="gps-field-label">
+          Trigger lines
+          {cleanCount > 0 && <span className="gps-line-count">{cleanCount}</span>}
+        </label>
+        <TriggerLinesList
+          lines={localLines}
+          onChange={setLocalLines}
+          onCommit={(lines) => onUpdate({ gps_string_lines: lines })}
         />
       </div>
       <div className="gps-field">
@@ -113,15 +160,11 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
   draft: GpsEntry;
   areaNames: string[];
   onChange: (patch: Partial<GpsEntry>) => void;
-  onConfirm: () => void;
+  onConfirm: (lines: string[]) => void;
   onCancel: () => void;
 }) {
-  const [lines, setLines] = useState(draft.gps_string_lines.join('\n'));
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (textareaRef.current) resizeTextarea(textareaRef.current);
-  }, [lines]);
+  const [localLines, setLocalLines] = useState<string[]>(draft.gps_string_lines);
+  const cleanCount = localLines.filter((l) => l.length > 0).length;
 
   return (
     <div className="gps-entry gps-entry--add">
@@ -140,15 +183,13 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
         </select>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Trigger lines</label>
-        <textarea
-          ref={textareaRef}
-          className="gps-textarea"
-          value={lines}
-          placeholder="one trigger line per line"
-          onInput={(e) => resizeTextarea(e.currentTarget)}
-          onChange={(e) => setLines(e.target.value)}
-          onBlur={() => onChange({ gps_string_lines: lines.split('\n').filter((l) => l.length > 0) })}
+        <label className="gps-field-label">
+          Trigger lines
+          {cleanCount > 0 && <span className="gps-line-count">{cleanCount}</span>}
+        </label>
+        <TriggerLinesList
+          lines={localLines}
+          onChange={setLocalLines}
         />
       </div>
       <div className="gps-field">
@@ -176,8 +217,8 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
       <div className="gps-add-actions">
         <button
           type="button"
-          onClick={() => { onChange({ gps_string_lines: lines.split('\n').filter((l) => l.length > 0) }); onConfirm(); }}
-          disabled={lines.trim().length === 0}
+          onClick={() => { const clean = localLines.filter((l) => l.length > 0); if (clean.length > 0) onConfirm(clean); }}
+          disabled={cleanCount === 0}
         >
           Add
         </button>
@@ -218,8 +259,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
     applyUpdate(entries.filter((_, i) => i !== idx));
   }
 
-  function addEntry() {
-    const lines = draft.gps_string_lines.filter((l) => l.length > 0);
+  function addEntry(lines: string[]) {
     if (lines.length === 0) return;
     applyUpdate([...entries, { ...draft, gps_string_lines: lines }]);
     setDraft(blankEntry(roomId));
@@ -235,7 +275,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
       <div className="gps-list">
         {entries.map((entry, idx) => (
           <GpsEntryRow
-            key={idx}
+            key={`${roomId}-${idx}`}
             entry={entry}
             idx={idx}
             areaNames={areaNames}

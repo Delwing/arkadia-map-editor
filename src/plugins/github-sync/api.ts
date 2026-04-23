@@ -1,7 +1,14 @@
 const REPO = import.meta.env.VITE_GITHUB_REPO as string;
 const MAP_FILE = (import.meta.env.VITE_GITHUB_MAP_FILE as string) || 'map.dat';
-const BRANCH = (import.meta.env.VITE_GITHUB_BRANCH as string) || 'development';
+export const BRANCH = (import.meta.env.VITE_GITHUB_BRANCH as string) || 'development';
 const REPO_API = `https://api.github.com/repos/${REPO}`;
+
+export interface OpenPR {
+    number: number;
+    html_url: string;
+    title: string;
+    user: { login: string };
+}
 
 function headers(token: string) {
     return {
@@ -17,8 +24,10 @@ export async function getUser(token: string): Promise<{ login: string; avatar_ur
     return res.json();
 }
 
-export async function getOpenPRs(token: string): Promise<{ url: string; html_url: string }[]> {
-    const res = await fetch(`${REPO_API}/pulls?state=open&base=master`, { headers: headers(token) });
+export async function getOpenPRs(token: string): Promise<OpenPR[]> {
+    const owner = REPO.split('/')[0];
+    const res = await fetch(`${REPO_API}/pulls?state=open&head=${owner}:${BRANCH}&base=master`, { headers: headers(token) });
+    if (!res.ok) return [];
     return res.json();
 }
 
@@ -46,13 +55,13 @@ export async function getFileSha(token: string, ref: string): Promise<string> {
     return data.sha;
 }
 
-export async function uploadFile(token: string, base64Content: string, fileSha: string): Promise<void> {
+export async function uploadFile(token: string, base64Content: string, fileSha: string, message = 'update map'): Promise<void> {
     const res = await fetch(`${REPO_API}/contents/${MAP_FILE}`, {
         method: 'PUT',
         headers: headers(token),
         body: JSON.stringify({
             content: base64Content,
-            message: 'update map',
+            message,
             branch: BRANCH,
             sha: fileSha,
         }),
@@ -74,7 +83,7 @@ export function getProxiedMapUrl(): string {
     return `${import.meta.env.VITE_LOCK_API_URL}/api/map/latest`;
 }
 
-export async function createPR(token: string, title: string, body: string): Promise<{ html_url: string }> {
+export async function createPR(token: string, title: string, body: string): Promise<{ number: number; html_url: string }> {
     const res = await fetch(`${REPO_API}/pulls`, {
         method: 'POST',
         headers: headers(token),
@@ -85,6 +94,18 @@ export async function createPR(token: string, title: string, body: string): Prom
         throw new Error(data.message ?? 'Failed to create PR');
     }
     return res.json();
+}
+
+export async function updatePR(token: string, prNumber: number, title: string, body: string): Promise<void> {
+    const res = await fetch(`${REPO_API}/pulls/${prNumber}`, {
+        method: 'PATCH',
+        headers: headers(token),
+        body: JSON.stringify({ title, body }),
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message ?? 'Failed to update PR');
+    }
 }
 
 export function uint8ToBase64(bytes: Uint8Array): string {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { loadUrlIntoStore, getMapBytes } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
-import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, uint8ToBase64, getLatestRelease, getProxiedMapUrl } from './api';
+import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, BRANCH, OpenPR } from './api';
 import { acquireLock, releaseLock } from './lock';
 import { subscribe, getToken, getSavedBytes, getHasLock, setHasLock, setSavedBytes, getMapVersion } from './state';
 
@@ -17,9 +17,9 @@ export function GitHubPanel() {
     const [, rerender] = useState(0);
     const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
     const [latestRelease, setLatestRelease] = useState<string | null>(null);
+    const [existingPR, setExistingPR] = useState<OpenPR | null>(null);
     const [prMessage, setPrMessage] = useState('');
     const [status, setStatus] = useState('');
-    const [prUrl, setPrUrl] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
     useEffect(() => subscribe(() => rerender((n) => n + 1)), []);
@@ -29,6 +29,7 @@ export function GitHubPanel() {
     const hasLock = getHasLock();
     const savedBytes = getSavedBytes();
     const versionMatch = mapVersion != null && latestRelease != null && mapVersion === latestRelease;
+    const isMyPR = user != null && existingPR != null && existingPR.user.login === user.login;
 
     useEffect(() => {
         if (!token) { setUser(null); return; }
@@ -38,6 +39,11 @@ export function GitHubPanel() {
     useEffect(() => {
         getLatestRelease().then(setLatestRelease);
     }, []);
+
+    useEffect(() => {
+        if (!token) { setExistingPR(null); return; }
+        getOpenPRs(token).then(prs => setExistingPR(prs[0] ?? null));
+    }, [token]);
 
     const handleSave = () => {
         const bytes = getMapBytes();
@@ -83,7 +89,8 @@ export function GitHubPanel() {
         try {
             const prs = await getOpenPRs(token);
             if (prs.length > 0) {
-                setStatus(`Open PR already exists: ${prs[0].html_url}`);
+                setExistingPR(prs[0]);
+                setStatus('An open PR already exists.');
                 return;
             }
 
@@ -102,11 +109,33 @@ export function GitHubPanel() {
 
             setStatus('Creating PR…');
             const pr = await createPR(token, prMessage || 'Map update', prMessage);
+            setExistingPR({ number: pr.number, html_url: pr.html_url, title: prMessage || 'Map update', user: { login: user!.login } });
             setStatus('PR created.');
-            setPrUrl(pr.html_url);
 
             await releaseLock(token);
             setHasLock(false);
+            setPrMessage('');
+        } catch (e) {
+            setStatus(`Error: ${String(e)}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleUpdate = async () => {
+        if (!token || !savedBytes || !existingPR) return;
+        setBusy(true);
+        setStatus('Uploading map…');
+        try {
+            const fileSha = await getFileSha(token, BRANCH);
+            await uploadFile(token, uint8ToBase64(savedBytes), fileSha, prMessage || 'update map');
+
+            if (prMessage) {
+                setStatus('Updating PR…');
+                await updatePR(token, existingPR.number, existingPR.title, prMessage);
+            }
+
+            setStatus('PR updated.');
             setPrMessage('');
         } catch (e) {
             setStatus(`Error: ${String(e)}`);
@@ -167,7 +196,54 @@ export function GitHubPanel() {
                 )}
             </div>
 
-            {!hasLock ? (
+            {existingPR ? (
+                <div>
+                    {isMyPR ? (
+                        <>
+                            <p className="hint" style={{ color: '#ffd080', marginBottom: 4 }}>
+                                Your PR is open — locking is disabled.
+                            </p>
+                            <a href={existingPR.html_url} target="_blank" rel="noreferrer" className="hint"
+                                style={{ display: 'block', marginBottom: 8, wordBreak: 'break-all' }}>
+                                {existingPR.html_url}
+                            </a>
+                            <p className="hint" style={{ color: savedBytes ? '#a6e3a1' : undefined, marginBottom: 8 }}>
+                                {savedBytes ? 'Map staged — ready to update.' : 'Stage the map to enable update.'}
+                            </p>
+                            <button type="button" disabled={busy} onClick={handleSave} style={{ marginBottom: 8 }}>
+                                Save map
+                            </button>
+                            <div className="field" style={{ marginBottom: 4 }}>
+                                <textarea
+                                    placeholder="Commit message / PR description (optional)"
+                                    value={prMessage}
+                                    onChange={(e) => setPrMessage(e.target.value)}
+                                    rows={3}
+                                    style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+                                />
+                            </div>
+                            <button type="button" disabled={busy || !savedBytes} onClick={handleUpdate} style={{ marginBottom: 4 }}>
+                                Update PR
+                            </button>
+                            {hasLock && (
+                                <button type="button" disabled={busy} onClick={handleRelease}>
+                                    Release lock
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <p className="hint" style={{ marginBottom: 4 }}>
+                                An open PR from <strong>{existingPR.user.login}</strong> exists — locking is disabled.
+                            </p>
+                            <a href={existingPR.html_url} target="_blank" rel="noreferrer" className="hint"
+                                style={{ display: 'block', wordBreak: 'break-all' }}>
+                                {existingPR.html_url}
+                            </a>
+                        </>
+                    )}
+                </div>
+            ) : !hasLock ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {LOCK_OPTIONS.map((opt) => (
                         <button key={opt.label} type="button" disabled={busy || !versionMatch} onClick={() => handleLock(opt.duration)}>
@@ -202,11 +278,6 @@ export function GitHubPanel() {
             )}
 
             {status && <p className="hint" style={{ marginTop: 12, wordBreak: 'break-word' }}>{status}</p>}
-            {prUrl && (
-                <a href={prUrl} target="_blank" rel="noreferrer" className="hint" style={{ display: 'block', marginTop: 4, wordBreak: 'break-all' }}>
-                    {prUrl}
-                </a>
-            )}
         </div>
     );
 }
