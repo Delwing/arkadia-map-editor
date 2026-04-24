@@ -36,8 +36,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: arkadia-map-editor/package-lock.json
+          cache: yarn
+          cache-dependency-path: arkadia-map-editor/yarn.lock
 
       - name: Install mudlet-map-editor dependencies
         run: npm install
@@ -48,11 +48,11 @@ jobs:
         working-directory: mudlet-map-editor
 
       - name: Install arkadia-map-editor dependencies
-        run: npm install
+        run: yarn install --frozen-lockfile
         working-directory: arkadia-map-editor
 
       - name: Build
-        run: npm run build
+        run: yarn build
         working-directory: arkadia-map-editor
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
