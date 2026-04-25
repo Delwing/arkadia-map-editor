@@ -26,26 +26,12 @@ jobs:
         with:
           path: arkadia-map-editor
 
-      - name: Checkout mudlet-map-editor
-        uses: actions/checkout@v4
-        with:
-          repository: Delwing/mudlet-map-editor
-          path: mudlet-map-editor
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: yarn
           cache-dependency-path: arkadia-map-editor/yarn.lock
-
-      - name: Install mudlet-map-editor dependencies
-        run: npm install
-        working-directory: mudlet-map-editor
-
-      - name: Build mudlet-map-editor lib
-        run: npm run build:lib
-        working-directory: mudlet-map-editor
 
       - name: Install arkadia-map-editor dependencies
         run: yarn install --frozen-lockfile
