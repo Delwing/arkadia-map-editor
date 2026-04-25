@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "mudlet-map-editor": "0.10.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "mudlet-map-editor": "0.10.2"
   },
   "devDependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "konva": "^10.2.5",
     "mudlet-map-renderer": "^0.41.1-konva",
     "mudlet-map-binary-reader": "^0.9.0",

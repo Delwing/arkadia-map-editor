@@ -31,6 +31,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
+      'konva',
+      'mudlet-map-renderer',
       'mudlet-map-binary-reader',
       'mudlet-map-binary-reader/dist/map-operations',
     ],
