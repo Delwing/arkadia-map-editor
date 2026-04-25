@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { fileURLToPath } from 'node:url';
 
-const fsStub = fileURLToPath(new URL('../mudlet-map-editor/src/shims/fs-stub.ts', import.meta.url));
 
 export default defineConfig({
   base: './',
@@ -16,7 +15,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      fs: fsStub,
       'vite-plugin-node-polyfills/shims/buffer': fileURLToPath(
         new URL('./node_modules/vite-plugin-node-polyfills/shims/buffer/dist/index.js', import.meta.url)
       ),
