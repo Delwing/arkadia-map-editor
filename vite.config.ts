@@ -25,14 +25,5 @@ export default defineConfig({
         new URL('./node_modules/vite-plugin-node-polyfills/shims/global/dist/index.js', import.meta.url)
       ),
     },
-    dedupe: ['konva', 'react', 'react-dom'],
-  },
-  optimizeDeps: {
-    include: [
-      'konva',
-      'mudlet-map-renderer',
-      'mudlet-map-binary-reader',
-      'mudlet-map-binary-reader/dist/map-operations',
-    ],
-  },
+  }
 });
