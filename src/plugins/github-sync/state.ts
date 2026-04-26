@@ -22,7 +22,25 @@ export function getSavedBytes() { return _savedBytes; }
 export function setSavedBytes(b: Uint8Array) { _savedBytes = b; notify(); }
 
 export function getHasLock() { return _hasLock; }
-export function setHasLock(v: boolean) { _hasLock = v; notify(); }
+
+let _lockExpiresAt: number | null = null;
+let _lockDuration: number | null = null;
+export function getLockExpiresAt() { return _lockExpiresAt; }
+export function getLockDuration() { return _lockDuration; }
+
+export function setLockInfo(duration: number) {
+    _hasLock = true;
+    _lockExpiresAt = Date.now() + duration;
+    _lockDuration = duration;
+    notify();
+}
+
+export function clearLockInfo() {
+    _hasLock = false;
+    _lockExpiresAt = null;
+    _lockDuration = null;
+    notify();
+}
 
 let _mapVersion: string | null = null;
 export function getMapVersion() { return _mapVersion; }

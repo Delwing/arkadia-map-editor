@@ -3,7 +3,7 @@ import { loadUrlIntoStore, getMapBytes } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
 import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, BRANCH, OpenPR } from './api';
 import { acquireLock, releaseLock } from './lock';
-import { subscribe, getToken, getSavedBytes, getHasLock, setHasLock, setSavedBytes, getMapVersion } from './state';
+import { subscribe, getToken, getSavedBytes, getHasLock, setLockInfo, clearLockInfo, setSavedBytes, getMapVersion, getLockExpiresAt, getLockDuration } from './state';
 
 const HOUR = 1000 * 60 * 60;
 const LOCK_OPTIONS = [
@@ -12,6 +12,61 @@ const LOCK_OPTIONS = [
     { label: '4 hours',  duration: HOUR * 4 },
     { label: '8 hours',  duration: HOUR * 8 },
 ];
+
+function formatRemaining(ms: number) {
+    const total = Math.ceil(ms / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+function LockGauge() {
+    const [, tick] = useState(0);
+
+    useEffect(() => {
+        const id = setInterval(() => tick((n) => n + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    const expiresAt = getLockExpiresAt();
+    const duration = getLockDuration();
+    const remaining = expiresAt ? Math.max(0, expiresAt - Date.now()) : 0;
+
+    useEffect(() => {
+        if (expiresAt && remaining === 0) clearLockInfo();
+    }, [expiresAt, remaining]);
+
+    if (!expiresAt || !duration || remaining === 0) return null;
+
+    const pct = Math.min(100, (remaining / duration) * 100);
+    const color = pct > 50 ? '#a6e3a1' : pct > 20 ? '#ffd080' : '#f38ba8';
+
+    return (
+        <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8em', color: '#c0cfe6', marginBottom: 3 }}>
+                <span>Lock remaining</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatRemaining(remaining)}</span>
+            </div>
+            <div style={{
+                background: 'rgba(6, 9, 16, 0.6)',
+                border: '1px solid rgba(143, 184, 255, 0.15)',
+                borderRadius: 4,
+                height: 6,
+                overflow: 'hidden',
+            }}>
+                <div style={{
+                    height: '100%',
+                    width: `${pct}%`,
+                    background: color,
+                    transition: 'width 1s linear, background 0.3s',
+                }} />
+            </div>
+        </div>
+    );
+}
 
 export function GitHubPanel() {
     const [, rerender] = useState(0);
@@ -59,7 +114,7 @@ export function GitHubPanel() {
         try {
             const res = await acquireLock(token, duration);
             setStatus(res.message);
-            if (res.result) setHasLock(true);
+            if (res.result) setLockInfo(duration);
         } catch (e) {
             setStatus(String(e));
         } finally {
@@ -74,7 +129,7 @@ export function GitHubPanel() {
         try {
             const res = await releaseLock(token);
             setStatus(res.message);
-            setHasLock(false);
+            clearLockInfo();
         } catch (e) {
             setStatus(String(e));
         } finally {
@@ -113,7 +168,7 @@ export function GitHubPanel() {
             setStatus('PR created.');
 
             await releaseLock(token);
-            setHasLock(false);
+            clearLockInfo();
             setPrMessage('');
         } catch (e) {
             setStatus(`Error: ${String(e)}`);
@@ -163,7 +218,7 @@ export function GitHubPanel() {
                     : <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
                 }
                 <span>{user?.login ?? ''}</span>
-                <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); setHasLock(false); }}>
+                <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); clearLockInfo(); }}>
                     Logout
                 </button>
             </div>
@@ -226,9 +281,12 @@ export function GitHubPanel() {
                                 Update PR
                             </button>
                             {hasLock && (
-                                <button type="button" disabled={busy} onClick={handleRelease}>
-                                    Release lock
-                                </button>
+                                <>
+                                    <LockGauge />
+                                    <button type="button" disabled={busy} onClick={handleRelease}>
+                                        Release lock
+                                    </button>
+                                </>
                             )}
                         </>
                     ) : (
@@ -253,6 +311,7 @@ export function GitHubPanel() {
                 </div>
             ) : (
                 <>
+                    <LockGauge />
                     <p className="hint" style={{ color: '#ffd080', marginBottom: 8 }}>
                         Lock active.{savedBytes ? ' Map staged — ready to upload.' : ' Stage the map to enable upload.'}
                     </p>
