@@ -77,6 +77,17 @@ function TriggerLinesList({
             ref={(el) => { if (el) resizeTriggerTextarea(el); }}
             onChange={(e) => { update(i, e.target.value); resizeTriggerTextarea(e.currentTarget); }}
             onBlur={commit}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+            onPaste={(e) => {
+              e.preventDefault();
+              const text = e.clipboardData.getData('text').replace(/[\r\n]+/g, ' ');
+              const el = e.currentTarget;
+              const start = el.selectionStart ?? 0;
+              const end = el.selectionEnd ?? 0;
+              const next = line.slice(0, start) + text + line.slice(end);
+              update(i, next);
+              requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + text.length; });
+            }}
           />
           <button
             type="button"
