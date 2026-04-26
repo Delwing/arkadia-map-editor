@@ -27,3 +27,8 @@ export function setHasLock(v: boolean) { _hasLock = v; notify(); }
 let _mapVersion: string | null = null;
 export function getMapVersion() { return _mapVersion; }
 export function setMapVersion(v: string | null) { _mapVersion = v; notify(); }
+
+export interface LockOwner { user: string; expiresAt: number; }
+let _lockOwner: LockOwner | null = null;
+export function getLockOwner() { return _lockOwner; }
+export function setLockOwner(v: LockOwner | null) { _lockOwner = v; notify(); }

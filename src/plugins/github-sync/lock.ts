@@ -7,6 +7,16 @@ function headers(token: string) {
     };
 }
 
+export type LockStatus =
+    | { locked: false }
+    | { locked: true; user: string; expiresAt: number };
+
+export async function getLockStatus(): Promise<LockStatus> {
+    const res = await fetch(`${LOCK_API}/api/lock`);
+    if (!res.ok) return { locked: false };
+    return res.json();
+}
+
 export async function acquireLock(token: string, duration: number): Promise<{ message: string; result: boolean }> {
     const res = await fetch(`${LOCK_API}/api/lock`, {
         method: 'POST',

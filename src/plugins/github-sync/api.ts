@@ -7,7 +7,23 @@ export interface OpenPR {
     number: number;
     html_url: string;
     title: string;
-    user: { login: string };
+    user: { login: string; avatar_url: string };
+    head: { sha: string };
+}
+
+export interface CheckRun {
+    id: number;
+    name: string;
+    status: 'queued' | 'in_progress' | 'completed';
+    conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | null;
+    html_url: string;
+}
+
+export interface Review {
+    id: number;
+    user: { login: string; avatar_url: string };
+    state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED';
+    submitted_at: string;
 }
 
 function headers(token: string) {
@@ -27,6 +43,30 @@ export async function getUser(token: string): Promise<{ login: string; avatar_ur
 export async function getOpenPRs(token: string): Promise<OpenPR[]> {
     const owner = REPO.split('/')[0];
     const res = await fetch(`${REPO_API}/pulls?state=open&head=${owner}:${BRANCH}&base=master`, { headers: headers(token) });
+    if (!res.ok) return [];
+    return res.json();
+}
+
+export async function getRequiredApprovals(token: string): Promise<number | null> {
+    const res = await fetch(`${REPO_API}/branches/master`, {
+        headers: { ...headers(token), Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.protection?.required_pull_request_reviews?.required_approving_review_count ?? null;
+}
+
+export async function getPRChecks(token: string, ref: string): Promise<CheckRun[]> {
+    const res = await fetch(`${REPO_API}/commits/${ref}/check-runs?per_page=100`, {
+        headers: { ...headers(token), Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.check_runs ?? [];
+}
+
+export async function getPRReviews(token: string, prNumber: number): Promise<Review[]> {
+    const res = await fetch(`${REPO_API}/pulls/${prNumber}/reviews?per_page=100`, { headers: headers(token) });
     if (!res.ok) return [];
     return res.json();
 }
@@ -81,6 +121,10 @@ export async function getLatestRelease(): Promise<string | null> {
 
 export function getProxiedMapUrl(): string {
     return `${import.meta.env.VITE_LOCK_API_URL}/api/map/latest`;
+}
+
+export function getProxiedBranchMapUrl(): string {
+    return `${import.meta.env.VITE_LOCK_API_URL}/api/map/branch`;
 }
 
 export async function createPR(token: string, title: string, body: string): Promise<{ number: number; html_url: string }> {
