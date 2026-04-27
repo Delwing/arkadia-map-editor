@@ -936,10 +936,10 @@ mudlet-map-binary-reader@^0.9.0:
     lodash "4.18.0"
     qtdatastream "^1.1.0"
 
-mudlet-map-editor@0.14.0:
-  version "0.14.0"
-  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.14.0.tgz#4172b9d8ac8ea8b919ef44dddd4018853cac40d8"
-  integrity sha512-JctVelhWzeZZvRH2sPkhRe1DFsxnbBO8wxDa3sqAgVqan253DPGQ8FoZDT7sfHD1pdbK1ShzP3bFG1x4L8SRoQ==
+mudlet-map-editor@0.15.0:
+  version "0.15.0"
+  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.15.0.tgz#75b66c4273a0e9279b606344963e1214870fed00"
+  integrity sha512-TASZl7hECCMmXrXuzuVPWtixJCQf3PO5sSr1Qd+4aa5Pv57po0kQGd161+hV3PGz/U7ZYxTxm5fNBgy87ilXIw==
   dependencies:
     "@monaco-editor/react" "^4.7.0"
     konva "^10.2.5"
