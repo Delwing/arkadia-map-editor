@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { loadUrlIntoStore, getMapBytes } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
 import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, getProxiedBranchMapUrl, getPRChecks, getPRReviews, getRequiredApprovals, BRANCH, OpenPR, CheckRun, Review } from './api';
@@ -25,6 +26,7 @@ function latestReviewPerUser(reviews: Review[]): Review[] {
 }
 
 function PRDetails({ checks, reviews, requiredApprovals }: { checks: CheckRun[]; reviews: Review[]; requiredApprovals: number | null }) {
+    const { t } = useTranslation('arkadia');
     const latestReviews = latestReviewPerUser(reviews);
     const approved = latestReviews.filter(r => r.state === 'APPROVED');
     const changesRequested = latestReviews.filter(r => r.state === 'CHANGES_REQUESTED');
@@ -54,7 +56,7 @@ function PRDetails({ checks, reviews, requiredApprovals }: { checks: CheckRun[];
                     {changesRequested.length > 0 ? '✗' : approvalsMet ? '✓' : '●'}
                 </span>
                 <span style={{ color: approvalsColor }}>
-                    {approved.length}{requiredApprovals !== null ? ` / ${requiredApprovals}` : ''} approval{requiredApprovals !== 1 ? 's' : ''}
+                    {t('sync.approvals', { count: approved.length })}{requiredApprovals !== null ? ` / ${requiredApprovals}` : ''}
                 </span>
             </div>
             {(approved.length > 0 || changesRequested.length > 0) && (
@@ -68,7 +70,7 @@ function PRDetails({ checks, reviews, requiredApprovals }: { checks: CheckRun[];
                     {changesRequested.map(r => (
                         <span key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#f38ba8' }}>
                             <img src={r.user.avatar_url} alt="" width={14} height={14} style={{ borderRadius: '50%' }} />
-                            {r.user.login} (changes requested)
+                            {r.user.login} ({t('sync.changesRequested')})
                         </span>
                     ))}
                 </div>
@@ -95,11 +97,15 @@ interface OpenPRViewProps {
 }
 
 function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes, hasLock, busy, prMessage, onPrMessageChange, onFetchBranch, onSave, onUpdate, onRelease }: OpenPRViewProps) {
+    const { t } = useTranslation('arkadia');
     return (
         <div>
             <div style={{ marginBottom: 16 }}>
                 <p className="hint" style={{ color: isMyPR ? '#ffd080' : undefined, marginBottom: 8 }}>
-                    {isMyPR ? 'Your PR is open — locking is disabled.' : <>Open PR from <strong>{pr.user.login}</strong> — locking is disabled.</>}
+                    {isMyPR
+                        ? t('sync.yourPrOpen')
+                        : <Trans i18nKey="sync.otherPrOpen" ns="arkadia" values={{ user: pr.user.login }} components={[<span />, <strong />]} />
+                    }
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <a href={pr.html_url} target="_blank" rel="noreferrer" className="hint"
@@ -107,7 +113,7 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
                         #{pr.number} {pr.title}
                     </a>
                     <button type="button" disabled={busy} onClick={onFetchBranch} style={{ flexShrink: 0 }}>
-                        Fetch from PR
+                        {t('sync.fetchFromPR')}
                     </button>
                 </div>
                 <PRDetails checks={checks} reviews={reviews} requiredApprovals={requiredApprovals} />
@@ -115,14 +121,14 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
             {isMyPR && (
                 <div style={{ borderTop: '1px solid #313244', paddingTop: 14 }}>
                     <p className="hint" style={{ color: savedBytes ? '#a6e3a1' : undefined, marginBottom: 8 }}>
-                        {savedBytes ? 'Map staged — ready to update.' : 'Stage the map to enable update.'}
+                        {savedBytes ? t('sync.stagedReady') : t('sync.stageToUpdate')}
                     </p>
                     <button type="button" disabled={busy} onClick={onSave} style={{ marginBottom: 8 }}>
-                        Save map
+                        {t('sync.saveMap')}
                     </button>
                     <div className="field" style={{ marginBottom: 8 }}>
                         <textarea
-                            placeholder="Commit message / PR description (optional)"
+                            placeholder={t('sync.prDescriptionPlaceholder')}
                             value={prMessage}
                             onChange={(e) => onPrMessageChange(e.target.value)}
                             rows={3}
@@ -131,11 +137,11 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                         <button type="button" disabled={busy || !savedBytes} onClick={onUpdate}>
-                            Update PR
+                            {t('sync.updatePR')}
                         </button>
                         {hasLock && (
                             <button type="button" disabled={busy} onClick={onRelease}>
-                                Release lock
+                                {t('sync.releaseLock')}
                             </button>
                         )}
                     </div>
@@ -146,14 +152,15 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
 }
 
 const HOUR = 1000 * 60 * 60;
-const LOCK_OPTIONS = [
-    { label: '1 hour',   duration: HOUR },
-    { label: '2 hours',  duration: HOUR * 2 },
-    { label: '4 hours',  duration: HOUR * 4 },
-    { label: '8 hours',  duration: HOUR * 8 },
+const LOCK_DURATIONS = [
+    { key: 'lockDuration1h' as const, duration: HOUR },
+    { key: 'lockDuration2h' as const, duration: HOUR * 2 },
+    { key: 'lockDuration4h' as const, duration: HOUR * 4 },
+    { key: 'lockDuration8h' as const, duration: HOUR * 8 },
 ];
 
 export function GitHubPanel() {
+    const { t } = useTranslation('arkadia');
     const [, rerender] = useState(0);
     const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
     const [latestRelease, setLatestRelease] = useState<string | null>(null);
@@ -206,9 +213,9 @@ export function GitHubPanel() {
 
     const handleSave = () => {
         const bytes = getMapBytes();
-        if (!bytes) { setStatus('No map loaded.'); return; }
+        if (!bytes) { setStatus(t('sync.noMapLoaded')); return; }
         setSavedBytes(bytes);
-        setStatus('Map staged for upload.');
+        setStatus(t('sync.mapStaged'));
     };
 
     const refreshLockStatus = () =>
@@ -217,7 +224,7 @@ export function GitHubPanel() {
     const handleLock = async (duration: number) => {
         if (!token) return;
         setBusy(true);
-        setStatus('Acquiring lock…');
+        setStatus(t('sync.acquiringLock'));
         try {
             const res = await acquireLock(token, duration);
             setStatus(res.message);
@@ -233,7 +240,7 @@ export function GitHubPanel() {
     const handleRelease = async () => {
         if (!token) return;
         setBusy(true);
-        setStatus('Releasing lock…');
+        setStatus(t('sync.releasingLock'));
         try {
             const res = await releaseLock(token);
             setStatus(res.message);
@@ -249,39 +256,39 @@ export function GitHubPanel() {
     const handleUpload = async () => {
         if (!token || !savedBytes) return;
         setBusy(true);
-        setStatus('Checking for open PRs…');
+        setStatus(t('sync.checkingPRs'));
         try {
             const prs = await getOpenPRs(token);
             if (prs.length > 0) {
                 setExistingPR(prs[0]);
-                setStatus('An open PR already exists.');
+                setStatus(t('sync.prAlreadyExists'));
                 return;
             }
 
-            setStatus('Creating branch…');
+            setStatus(t('sync.creatingBranch'));
             const masterSha = await getMasterSha(token);
             try {
                 await createBranch(token, masterSha);
             } catch (e: any) {
-                setStatus(`Branch error: ${e.message}`);
+                setStatus(t('sync.branchError', { error: e.message }));
                 return;
             }
 
-            setStatus('Uploading map…');
+            setStatus(t('sync.uploadingMap'));
             const fileSha = await getFileSha(token, masterSha);
             await uploadFile(token, uint8ToBase64(savedBytes), fileSha);
 
-            setStatus('Creating PR…');
+            setStatus(t('sync.creatingPR'));
             await createPR(token, prMessage || 'Map update', prMessage);
             const freshPRs = await getOpenPRs(token);
             setExistingPR(freshPRs[0] ?? null);
-            setStatus('PR created.');
+            setStatus(t('sync.prCreated'));
 
             await releaseLock(token);
             setHasLock(false);
             setPrMessage('');
         } catch (e) {
-            setStatus(`Error: ${String(e)}`);
+            setStatus(t('sync.error', { error: String(e) }));
         } finally {
             setBusy(false);
         }
@@ -290,22 +297,21 @@ export function GitHubPanel() {
     const handleUpdate = async () => {
         if (!token || !savedBytes || !existingPR) return;
         setBusy(true);
-        setStatus('Uploading map…');
+        setStatus(t('sync.uploadingMap'));
         try {
             const fileSha = await getFileSha(token, BRANCH);
             await uploadFile(token, uint8ToBase64(savedBytes), fileSha, prMessage || 'update map');
 
             if (prMessage) {
-                setStatus('Updating PR…');
+                setStatus(t('sync.updatingPR'));
                 await updatePR(token, existingPR.number, existingPR.title, prMessage);
             }
 
-            setStatus('PR updated.');
+            setStatus(t('sync.prUpdated'));
             setPrMessage('');
-            // refresh PR after new commit — head SHA changes so checks will reset
             if (token) getOpenPRs(token).then(prs => setExistingPR(prs[0] ?? null));
         } catch (e) {
-            setStatus(`Error: ${String(e)}`);
+            setStatus(t('sync.error', { error: String(e) }));
         } finally {
             setBusy(false);
         }
@@ -314,21 +320,26 @@ export function GitHubPanel() {
     if (!token) {
         return (
             <div className="panel-content">
-                <h3>Arkadia Sync</h3>
+                <h3>{t('sync.title')}</h3>
                 {lockOwner && (
                     <p className="hint" style={{ color: '#ffd080' }}>
-                        Lock held by <strong>{lockOwner.user}</strong> until {new Date(lockOwner.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+                        <Trans
+                            i18nKey="sync.lockHeldBy"
+                            ns="arkadia"
+                            values={{ user: lockOwner.user, time: new Date(lockOwner.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+                            components={[<span />, <strong />]}
+                        />
                     </p>
                 )}
-                <p className="hint">Login to acquire a lock and submit map updates.</p>
-                <button type="button" onClick={startOAuth}>Login with GitHub</button>
+                <p className="hint">{t('sync.loginHint')}</p>
+                <button type="button" onClick={startOAuth}>{t('sync.loginButton')}</button>
             </div>
         );
     }
 
     return (
         <div className="panel-content">
-            <h3>Arkadia Sync</h3>
+            <h3>{t('sync.title')}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 {user
                     ? <img src={user.avatar_url} alt="" width={24} height={24} style={{ borderRadius: '50%', flexShrink: 0 }} />
@@ -336,39 +347,44 @@ export function GitHubPanel() {
                 }
                 <span>{user?.login ?? ''}</span>
                 <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); setHasLock(false); }}>
-                    Logout
+                    {t('sync.logout')}
                 </button>
             </div>
 
             <div style={{ marginBottom: 12, fontSize: '0.85em' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1 }}>
-                        <div>Map version: <strong>{mapVersion ?? '—'}</strong></div>
-                        <div>Latest release: <strong>{latestRelease ?? '…'}</strong></div>
+                        <div>{t('sync.mapVersion')} <strong>{mapVersion ?? '—'}</strong></div>
+                        <div>{t('sync.latestRelease')} <strong>{latestRelease ?? '…'}</strong></div>
                     </div>
                     <button type="button" disabled={busy} onClick={async () => {
                         setBusy(true);
-                        setStatus('Fetching latest map…');
+                        setStatus(t('sync.fetchingLatestMap'));
                         try {
                             await loadUrlIntoStore(getProxiedMapUrl());
-                            setStatus('Map loaded.');
+                            setStatus(t('sync.mapLoaded'));
                         } catch (e) {
-                            setStatus(`Fetch failed: ${String(e)}`);
+                            setStatus(t('sync.fetchFailed', { error: String(e) }));
                         } finally {
                             setBusy(false);
                         }
                     }}>
-                        Fetch
+                        {t('sync.fetch')}
                     </button>
                 </div>
                 {lockOwner && (
                     <p className="hint" style={{ color: '#ffd080', marginTop: 4 }}>
-                        Lock held by <strong>{lockOwner.user}</strong> until {new Date(lockOwner.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.
+                        <Trans
+                            i18nKey="sync.lockHeldBy"
+                            ns="arkadia"
+                            values={{ user: lockOwner.user, time: new Date(lockOwner.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+                            components={[<span />, <strong />]}
+                        />
                     </p>
                 )}
                 {mapVersion && latestRelease && !versionMatch && (
                     <p className="hint" style={{ color: '#f38ba8', marginTop: 4 }}>
-                        Version mismatch — fetch the latest map before locking.
+                        {t('sync.versionMismatch')}
                     </p>
                 )}
             </div>
@@ -387,12 +403,12 @@ export function GitHubPanel() {
                     onPrMessageChange={setPrMessage}
                     onFetchBranch={async () => {
                         setBusy(true);
-                        setStatus('Fetching branch map…');
+                        setStatus(t('sync.fetchingBranchMap'));
                         try {
                             await loadUrlIntoStore(getProxiedBranchMapUrl());
-                            setStatus('Branch map loaded.');
+                            setStatus(t('sync.branchMapLoaded'));
                         } catch (e) {
-                            setStatus(`Fetch failed: ${String(e)}`);
+                            setStatus(t('sync.fetchFailed', { error: String(e) }));
                         } finally {
                             setBusy(false);
                         }
@@ -403,23 +419,23 @@ export function GitHubPanel() {
                 />
             ) : !hasLock ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {LOCK_OPTIONS.map((opt) => (
-                        <button key={opt.label} type="button" disabled={busy || !versionMatch} onClick={() => handleLock(opt.duration)}>
-                            Lock for {opt.label}
+                    {LOCK_DURATIONS.map((opt) => (
+                        <button key={opt.key} type="button" disabled={busy || !versionMatch} onClick={() => handleLock(opt.duration)}>
+                            {t('sync.lockFor', { duration: t(`sync.${opt.key}` as any) })}
                         </button>
                     ))}
                 </div>
             ) : (
                 <>
                     <p className="hint" style={{ color: '#ffd080', marginBottom: 8 }}>
-                        Lock active.{savedBytes ? ' Map staged — ready to upload.' : ' Stage the map to enable upload.'}
+                        {t('sync.lockActive')}{savedBytes ? ` ${t('sync.stagedReadyUpload')}` : ` ${t('sync.stageToUpload')}`}
                     </p>
                     <button type="button" disabled={busy} onClick={handleSave} style={{ marginBottom: 8 }}>
-                        Save map
+                        {t('sync.saveMap')}
                     </button>
                     <div className="field" style={{ marginBottom: 4 }}>
                         <textarea
-                            placeholder="PR description (optional)"
+                            placeholder={t('sync.prDescriptionOnlyPlaceholder')}
                             value={prMessage}
                             onChange={(e) => setPrMessage(e.target.value)}
                             rows={3}
@@ -427,10 +443,10 @@ export function GitHubPanel() {
                         />
                     </div>
                     <button type="button" disabled={busy || !savedBytes} onClick={handleUpload} style={{ marginBottom: 4 }}>
-                        Upload &amp; create PR
+                        {t('sync.uploadCreatePR')}
                     </button>
                     <button type="button" disabled={busy} onClick={handleRelease}>
-                        Release lock without uploading
+                        {t('sync.releaseWithoutUpload')}
                     </button>
                 </>
             )}

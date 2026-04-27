@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
+import { addTranslations } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
 import { exchangeCode, setToken } from '../github-sync/auth';
 import { setSavedBytes, setMapVersion } from '../github-sync/state';
@@ -7,6 +8,12 @@ import { DirBindSection } from './DirBindSection';
 import { TeamFollowSection } from './TeamFollowSection';
 import { GPSSection } from './GPSSection';
 import { checkMap } from './mapChecks';
+import { en as arkadiaEn } from '../../i18n/locales/en';
+import { plArkadia } from '../../i18n/locales/pl';
+
+// Register plugin translations before the app renders
+addTranslations('en', 'arkadia', arkadiaEn);
+addTranslations('pl', 'arkadia', plArkadia);
 
 const TERENY: SwatchSet = {
   id: 'arkadia-tereny',

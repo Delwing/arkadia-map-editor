@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { pushCommand, store, useEditorState } from 'mudlet-map-editor';
 import arkadiaLogo from './arkadia-logo.svg';
@@ -61,6 +62,7 @@ function LinkEntryCard({ idx, from, to, exits, onUpdate, onRemove }: {
   onUpdate: (from: string, to: string) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [draftFrom, setDraftFrom] = useState(from);
 
   useEffect(() => { setDraftFrom(from); }, [from]);
@@ -69,10 +71,10 @@ function LinkEntryCard({ idx, from, to, exits, onUpdate, onRemove }: {
     <div className="gps-entry">
       <div className="gps-entry-header">
         <span className="gps-entry-index">#{idx + 1}</span>
-        <button type="button" className="ud-delete" title="Remove" onClick={onRemove}>×</button>
+        <button type="button" className="ud-delete" title={t('common.remove')} onClick={onRemove}>×</button>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">From</label>
+        <label className="gps-field-label">{t('teamFollow.from')}</label>
         <input
           className="ark-input"
           value={draftFrom}
@@ -82,7 +84,7 @@ function LinkEntryCard({ idx, from, to, exits, onUpdate, onRemove }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">To</label>
+        <label className="gps-field-label">{t('teamFollow.to')}</label>
         <ExitSelect value={to} exits={exits} onChange={(v) => onUpdate(from, v)} />
       </div>
     </div>
@@ -94,37 +96,39 @@ function LinkAddForm({ exits, onConfirm, onCancel }: {
   onConfirm: (from: string, to: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState(exits[0] ?? '');
 
   return (
     <div className="gps-entry gps-entry--add">
       <div className="gps-entry-header">
-        <span className="gps-entry-index">new</span>
+        <span className="gps-entry-index">{t('common.new')}</span>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">From</label>
+        <label className="gps-field-label">{t('teamFollow.from')}</label>
         <input
           className="ark-input"
           value={from}
-          placeholder="trigger text"
+          placeholder={t('teamFollow.fromPlaceholder')}
           onChange={(e) => setFrom(e.target.value)}
           autoFocus
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">To</label>
+        <label className="gps-field-label">{t('teamFollow.to')}</label>
         <ExitSelect value={to} exits={exits} onChange={setTo} />
       </div>
       <div className="gps-add-actions">
-        <button type="button" onClick={() => onConfirm(from, to)} disabled={!from.trim()}>Add</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" onClick={() => onConfirm(from, to)} disabled={!from.trim()}>{t('common.add')}</button>
+        <button type="button" onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </div>
   );
 }
 
 export function TeamFollowSection({ roomId, room, sceneRef }: RoomSectionProps) {
+  const { t } = useTranslation('arkadia');
   useEditorState((s) => s.dataVersion);
   const raw = room.userData?.[TEAM_FOLLOW_KEY];
   const entries = parseLinks(raw);
@@ -160,7 +164,7 @@ export function TeamFollowSection({ roomId, room, sceneRef }: RoomSectionProps) 
   return (
     <>
       <h4>
-        Team Follow Links
+        {t('teamFollow.title')}
         <img src={arkadiaLogo} alt="Arkadia" style={{ height: '2.5em', verticalAlign: 'middle', marginLeft: 6, marginTop: '-0.75em', marginBottom: '-0.75em' }} />
       </h4>
       <div className="gps-list">
@@ -171,12 +175,12 @@ export function TeamFollowSection({ roomId, room, sceneRef }: RoomSectionProps) 
             from={from}
             to={to}
             exits={exits}
-            onUpdate={(f, t) => updateEntry(idx, f, t)}
+            onUpdate={(f, tt) => updateEntry(idx, f, tt)}
             onRemove={() => removeEntry(idx)}
           />
         ))}
         {entries.length === 0 && !addOpen && (
-          <div className="gps-empty">— no team follow links —</div>
+          <div className="gps-empty">{t('teamFollow.empty')}</div>
         )}
         {addOpen && (
           <LinkAddForm
@@ -186,7 +190,7 @@ export function TeamFollowSection({ roomId, room, sceneRef }: RoomSectionProps) 
           />
         )}
         {!addOpen && (
-          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>+ Add follow link</button>
+          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>{t('teamFollow.addButton')}</button>
         )}
       </div>
     </>

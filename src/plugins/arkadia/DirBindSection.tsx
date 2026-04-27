@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { pushCommand, store, useEditorState } from 'mudlet-map-editor';
 import arkadiaLogo from './arkadia-logo.svg';
@@ -31,6 +32,7 @@ function DirEntryCard({ dir, cmd, onUpdate, onRemove }: {
   onUpdate: (v: string) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [draft, setDraft] = useState(cmd);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -42,15 +44,15 @@ function DirEntryCard({ dir, cmd, onUpdate, onRemove }: {
     <div className="gps-entry">
       <div className="gps-entry-header">
         <span className="gps-entry-index">{dir}</span>
-        <button type="button" className="ud-delete" title="Remove" onClick={onRemove}>×</button>
+        <button type="button" className="ud-delete" title={t('common.remove')} onClick={onRemove}>×</button>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Commands</label>
+        <label className="gps-field-label">{t('dirBind.commands')}</label>
         <input
           ref={inputRef}
           className="ark-input"
           value={draft}
-          placeholder="cmd1#cmd2"
+          placeholder={t('dirBind.commandsPlaceholder')}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => { if (draft !== cmd) onUpdate(draft); }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -65,16 +67,17 @@ function DirAddForm({ availableDirs, onConfirm, onCancel }: {
   onConfirm: (dir: string, cmd: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [dir, setDir] = useState(availableDirs[0] ?? '');
   const [cmd, setCmd] = useState('');
 
   return (
     <div className="gps-entry gps-entry--add">
       <div className="gps-entry-header">
-        <span className="gps-entry-index">new</span>
+        <span className="gps-entry-index">{t('common.new')}</span>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Direction</label>
+        <label className="gps-field-label">{t('dirBind.direction')}</label>
         <select
           className="gps-area-select"
           value={dir}
@@ -84,10 +87,10 @@ function DirAddForm({ availableDirs, onConfirm, onCancel }: {
         </select>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Commands</label>
+        <label className="gps-field-label">{t('dirBind.commands')}</label>
         <input
           className="ark-input"
-          placeholder="cmd1#cmd2"
+          placeholder={t('dirBind.commandsPlaceholder')}
           value={cmd}
           onChange={(e) => setCmd(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && cmd.trim() && onConfirm(dir, cmd)}
@@ -95,14 +98,15 @@ function DirAddForm({ availableDirs, onConfirm, onCancel }: {
         />
       </div>
       <div className="gps-add-actions">
-        <button type="button" onClick={() => onConfirm(dir, cmd)} disabled={!cmd.trim()}>Add</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" onClick={() => onConfirm(dir, cmd)} disabled={!cmd.trim()}>{t('common.add')}</button>
+        <button type="button" onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </div>
   );
 }
 
 export function DirBindSection({ roomId, room, sceneRef }: RoomSectionProps) {
+  const { t } = useTranslation('arkadia');
   useEditorState((s) => s.dataVersion);
   const raw = room.userData?.[DIR_BIND_KEY];
   const entries = parseDirBind(raw);
@@ -137,7 +141,7 @@ export function DirBindSection({ roomId, room, sceneRef }: RoomSectionProps) {
   return (
     <>
       <h4>
-        Direction Binds
+        {t('dirBind.title')}
         <img src={arkadiaLogo} alt="Arkadia" style={{ height: '2.5em', verticalAlign: 'middle', marginLeft: 6, marginTop: '-0.75em', marginBottom: '-0.75em' }} />
       </h4>
       <div className="gps-list">
@@ -151,7 +155,7 @@ export function DirBindSection({ roomId, room, sceneRef }: RoomSectionProps) {
           />
         ))}
         {entries.length === 0 && !addOpen && (
-          <div className="gps-empty">— no direction binds —</div>
+          <div className="gps-empty">{t('dirBind.empty')}</div>
         )}
         {addOpen && availableDirs.length > 0 && (
           <DirAddForm
@@ -161,7 +165,7 @@ export function DirBindSection({ roomId, room, sceneRef }: RoomSectionProps) {
           />
         )}
         {!addOpen && availableDirs.length > 0 && (
-          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>+ Add direction bind</button>
+          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>{t('dirBind.addButton')}</button>
         )}
       </div>
     </>

@@ -14,6 +14,7 @@ export default defineConfig({
     }),
   ],
   resolve: {
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'i18next', 'react-i18next'],
     alias: {
       'vite-plugin-node-polyfills/shims/buffer': fileURLToPath(
         new URL('./node_modules/vite-plugin-node-polyfills/shims/buffer/dist/index.js', import.meta.url)

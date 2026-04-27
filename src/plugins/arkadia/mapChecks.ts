@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import type { EditorPlugin, PluginCheckResult } from 'mudlet-map-editor';
 
 type ArkadiaMap = Parameters<NonNullable<EditorPlugin['mapChecks']>>[0];
@@ -37,15 +38,15 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
         if (!VALID_DIRS.has(dir)) {
           results.push({
             id: `dir-bind-invalid-key:${roomId}:${dir}`,
-            message: `Dir bind: invalid direction "${dir}"`,
-            detail: `Room ${roomId} — "${dir}" is not a short direction.`,
+            message: i18n.t('checks.dirBindInvalidDirMsg', { ns: 'arkadia', dir }),
+            detail: i18n.t('checks.dirBindInvalidDirDetail', { ns: 'arkadia', roomId, dir }),
             roomId,
           });
         } else if (!cmd.trim()) {
           results.push({
             id: `dir-bind-empty-cmd:${roomId}:${dir}`,
-            message: `Dir bind: empty command for "${dir}"`,
-            detail: `Room ${roomId} — direction bind for "${dir}" has no commands.`,
+            message: i18n.t('checks.dirBindEmptyCmdMsg', { ns: 'arkadia', dir }),
+            detail: i18n.t('checks.dirBindEmptyCmdDetail', { ns: 'arkadia', roomId, dir }),
             roomId,
           });
         }
@@ -62,8 +63,8 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
         if (to && !exits.has(to)) {
           results.push({
             id: `team-follow-invalid-exit:${roomId}:${to}`,
-            message: `Team follow: exit "${to}" not found`,
-            detail: `Room ${roomId} — follow link targets "${to}" which is not an exit of this room.`,
+            message: i18n.t('checks.teamFollowBadExitMsg', { ns: 'arkadia', exit: to }),
+            detail: i18n.t('checks.teamFollowBadExitDetail', { ns: 'arkadia', roomId, exit: to }),
             roomId,
           });
         }
@@ -80,8 +81,8 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
             if (!entry.gps_string_lines || entry.gps_string_lines.length === 0) {
               results.push({
                 id: `gps-empty:${roomId}:${idx}`,
-                message: `GPS: entry #${idx + 1} has no trigger lines`,
-                detail: `Room ${roomId} — GPS entry #${idx + 1} has no trigger lines.`,
+                message: i18n.t('checks.gpsEmptyMsg', { ns: 'arkadia', idx: idx + 1 }),
+                detail: i18n.t('checks.gpsEmptyDetail', { ns: 'arkadia', roomId, idx: idx + 1 }),
                 roomId,
               });
             }

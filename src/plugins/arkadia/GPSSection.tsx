@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { pushCommand, store } from 'mudlet-map-editor';
 import arkadiaLogo from './arkadia-logo.svg';
@@ -48,6 +49,8 @@ function TriggerLinesList({
   onChange: (lines: string[]) => void;
   onCommit?: (lines: string[]) => void;
 }) {
+  const { t } = useTranslation('arkadia');
+
   const update = (i: number, val: string) => {
     const next = [...lines];
     next[i] = val;
@@ -72,7 +75,7 @@ function TriggerLinesList({
           <textarea
             className="gps-trigger-line-input"
             value={line}
-            placeholder="trigger pattern"
+            placeholder={t('gps.triggerPattern')}
             rows={1}
             ref={(el) => { if (el) resizeTriggerTextarea(el); }}
             onChange={(e) => { update(i, e.target.value); resizeTriggerTextarea(e.currentTarget); }}
@@ -93,11 +96,11 @@ function TriggerLinesList({
             type="button"
             className="gps-trigger-line-remove"
             onClick={() => remove(i)}
-            title="Remove line"
+            title={t('gps.removeLine')}
           >×</button>
         </div>
       ))}
-      <button type="button" className="gps-trigger-line-add" onClick={add}>+ add line</button>
+      <button type="button" className="gps-trigger-line-add" onClick={add}>{t('gps.addLine')}</button>
     </div>
   );
 }
@@ -109,6 +112,7 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
   onUpdate: (patch: Partial<GpsEntry>) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [localLines, setLocalLines] = useState(entry.gps_string_lines);
   const cleanCount = localLines.filter((l) => l.length > 0).length;
 
@@ -116,22 +120,22 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
     <div className="gps-entry">
       <div className="gps-entry-header">
         <span className="gps-entry-index">#{idx + 1}</span>
-        <button type="button" className="ud-delete" onClick={onRemove} title="Remove GPS entry">×</button>
+        <button type="button" className="ud-delete" onClick={onRemove} title={t('gps.removeEntry')}>×</button>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Area</label>
+        <label className="gps-field-label">{t('gps.area')}</label>
         <select
           className="gps-area-select"
           value={entry.area_name ?? ''}
           onChange={(e) => onUpdate({ area_name: e.target.value || undefined })}
         >
-          <option value="">— any area —</option>
+          <option value="">{t('gps.anyArea')}</option>
           {areaNames.map((name) => <option key={name} value={name}>{name}</option>)}
         </select>
       </div>
       <div className="gps-field">
         <label className="gps-field-label">
-          Trigger lines
+          {t('gps.triggerLines')}
           {cleanCount > 0 && <span className="gps-line-count">{cleanCount}</span>}
         </label>
         <TriggerLinesList
@@ -141,7 +145,7 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label" title="Line offset for multi-line trigger matching">Line delta</label>
+        <label className="gps-field-label" title={t('gps.lineDeltaTitle')}>{t('gps.lineDelta')}</label>
         <input
           type="number"
           className="gps-small-input"
@@ -155,11 +159,11 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label" title="Only apply when currently in these rooms (comma-separated IDs)">Within rooms</label>
+        <label className="gps-field-label" title={t('gps.withinRoomsTitle')}>{t('gps.withinRooms')}</label>
         <input
           type="text"
           className="gps-within-input"
-          placeholder="IDs, comma-separated"
+          placeholder={t('gps.withinRoomsPlaceholder')}
           key={`gps-wr-${idx}-${(entry.within_room_ids ?? []).join(',')}`}
           defaultValue={(entry.within_room_ids ?? []).join(', ')}
           onBlur={(e) => {
@@ -179,28 +183,29 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
   onConfirm: (lines: string[]) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('arkadia');
   const [localLines, setLocalLines] = useState<string[]>(draft.gps_string_lines);
   const cleanCount = localLines.filter((l) => l.length > 0).length;
 
   return (
     <div className="gps-entry gps-entry--add">
       <div className="gps-entry-header">
-        <span className="gps-entry-index">new</span>
+        <span className="gps-entry-index">{t('common.new')}</span>
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Area</label>
+        <label className="gps-field-label">{t('gps.area')}</label>
         <select
           className="gps-area-select"
           value={draft.area_name ?? ''}
           onChange={(e) => onChange({ area_name: e.target.value || undefined })}
         >
-          <option value="">— any area —</option>
+          <option value="">{t('gps.anyArea')}</option>
           {areaNames.map((name) => <option key={name} value={name}>{name}</option>)}
         </select>
       </div>
       <div className="gps-field">
         <label className="gps-field-label">
-          Trigger lines
+          {t('gps.triggerLines')}
           {cleanCount > 0 && <span className="gps-line-count">{cleanCount}</span>}
         </label>
         <TriggerLinesList
@@ -209,7 +214,7 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Line delta</label>
+        <label className="gps-field-label">{t('gps.lineDelta')}</label>
         <input
           type="number"
           className="gps-small-input"
@@ -218,11 +223,11 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">Within rooms</label>
+        <label className="gps-field-label">{t('gps.withinRooms')}</label>
         <input
           type="text"
           className="gps-within-input"
-          placeholder="IDs, comma-separated"
+          placeholder={t('gps.withinRoomsPlaceholder')}
           defaultValue={(draft.within_room_ids ?? []).join(', ')}
           onBlur={(e) => {
             const ids = e.target.value.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
@@ -236,15 +241,16 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
           onClick={() => { const clean = localLines.filter((l) => l.length > 0); if (clean.length > 0) onConfirm(clean); }}
           disabled={cleanCount === 0}
         >
-          Add
+          {t('common.add')}
         </button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" onClick={onCancel}>{t('common.cancel')}</button>
       </div>
     </div>
   );
 }
 
 export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
+  const { t } = useTranslation('arkadia');
   const [entries, setEntries] = useState(() => parseGps(room.userData));
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState(() => blankEntry(roomId));
@@ -286,7 +292,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
   return (
     <>
       <h4>
-        GPS Triggers
+        {t('gps.title')}
         <img src={arkadiaLogo} alt="Arkadia" style={{ height: '2.5em', verticalAlign: 'middle', marginLeft: 6, marginTop: '-0.75em', marginBottom: '-0.75em' }} />
       </h4>
       <div className="gps-list">
@@ -301,7 +307,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
           />
         ))}
         {entries.length === 0 && !addOpen && (
-          <div className="gps-empty">— no GPS entries —</div>
+          <div className="gps-empty">{t('gps.empty')}</div>
         )}
         {addOpen && (
           <GpsAddForm
@@ -313,7 +319,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
           />
         )}
         {!addOpen && (
-          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>+ Add GPS entry</button>
+          <button type="button" className="gps-add-btn" onClick={() => setAddOpen(true)}>{t('gps.addButton')}</button>
         )}
       </div>
     </>
