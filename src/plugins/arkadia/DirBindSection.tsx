@@ -6,7 +6,7 @@ import './arkadia.css';
 
 const DIR_BIND_KEY = 'dir_bind';
 
-const ALL_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw', 'u', 'd'] as const;
+const ALL_DIRS = ['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest', 'up', 'down'] as const;
 
 function parseDirBind(raw: string | undefined): [string, string][] {
   if (!raw) return [];
