@@ -319,7 +319,7 @@ export function GitHubPanel() {
 
     if (!token) {
         return (
-            <div className="panel-content">
+            <>
                 <h3>{t('sync.title')}</h3>
                 {lockOwner && (
                     <p className="hint" style={{ color: '#ffd080' }}>
@@ -333,12 +333,12 @@ export function GitHubPanel() {
                 )}
                 <p className="hint">{t('sync.loginHint')}</p>
                 <button type="button" onClick={startOAuth}>{t('sync.loginButton')}</button>
-            </div>
+            </>
         );
     }
 
     return (
-        <div className="panel-content">
+        <>
             <h3>{t('sync.title')}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 {user
@@ -452,6 +452,6 @@ export function GitHubPanel() {
             )}
 
             {status && <p className="hint" style={{ marginTop: 12, wordBreak: 'break-word' }}>{status}</p>}
-        </div>
+        </>
     );
 }
