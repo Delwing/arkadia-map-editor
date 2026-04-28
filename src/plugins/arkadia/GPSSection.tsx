@@ -83,7 +83,7 @@ function TriggerLinesList({
             onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
             onPaste={(e) => {
               e.preventDefault();
-              const text = e.clipboardData.getData('text').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ');
+              const text = e.clipboardData.getData('text').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
               const el = e.currentTarget;
               const start = el.selectionStart ?? 0;
               const end = el.selectionEnd ?? 0;
