@@ -148,9 +148,9 @@ const plugin: EditorPlugin = {
 
   roomPanelSections() {
     return [
-      { id: 'arkadia-dir-bind', render: (props) => <DirBindSection {...props} /> },
-      { id: 'arkadia-team-follow', render: (props) => <TeamFollowSection {...props} /> },
-      { id: 'arkadia-gps', render: (props) => <GPSSection {...props} /> },
+      { id: 'arkadia-dir-bind', render: (props) => <DirBindSection key={props.roomId} {...props} /> },
+      { id: 'arkadia-team-follow', render: (props) => <TeamFollowSection key={props.roomId} {...props} /> },
+      { id: 'arkadia-gps', render: (props) => <GPSSection key={props.roomId} {...props} /> },
     ];
   },
 
