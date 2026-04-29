@@ -38,6 +38,12 @@ export const en = {
     empty: '— no team follow links —',
     addButton: '+ Add follow link',
   },
+  bindy: {
+    title: 'Bindy',
+    drinkable: 'Drinkable',
+    locationBind: 'Location bind',
+    locationBindPlaceholder: 'cmd1#cmd2',
+  },
   checks: {
     dirBindInvalidDirMsg: 'Dir bind: invalid direction "{{dir}}"',
     dirBindInvalidDirDetail: 'Room {{roomId}} — "{{dir}}" is not a short direction.',
@@ -47,6 +53,26 @@ export const en = {
     teamFollowBadExitDetail: 'Room {{roomId}} — follow link targets "{{exit}}" which is not an exit of this room.',
     gpsEmptyMsg: 'GPS: entry #{{idx}} has no trigger lines',
     gpsEmptyDetail: 'Room {{roomId}} — GPS entry #{{idx}} has no trigger lines.',
+  },
+  notes: {
+    title: 'Release Notes',
+    refresh: 'Refresh',
+    roomIdLabel: 'Room ID',
+    useSelected: 'use #{{id}}',
+    textPlaceholder: 'Describe the change needed…',
+    addButton: '+ Add note',
+    empty: '— no notes —',
+    goToRoom: 'Go to room',
+    delete: 'Delete',
+    invalidRoomId: 'Invalid room ID.',
+    record: '● Record commands',
+    recordStop: '■ Stop',
+    recording: 'Recording',
+    recordedCount: '{{count}} commands',
+    recordHint: 'Make any changes in the editor, then return here to stop.',
+    clearCommands: 'Clear',
+    apply: 'Apply',
+    applyTitle: 'Navigate to room and replay all recorded commands',
   },
   sync: {
     title: 'Arkadia Sync',
@@ -100,6 +126,8 @@ export const en = {
     fetchFailed: 'Fetch failed: {{error}}',
     branchError: 'Branch error: {{error}}',
     error: 'Error: {{error}}',
+    pendingNotesTitle: '{{count}} pending note(s) with commands',
+    goToNotes: 'Go to Notes tab',
   },
 } as const;
 

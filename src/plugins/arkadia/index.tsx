@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
 import { addTranslations } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
+import { NotesTab } from '../github-sync/NotesTab';
+import { RecordingOverlay } from '../github-sync/RecordingOverlay';
 import { exchangeCode, setToken } from '../github-sync/auth';
 import { setSavedBytes, setMapVersion } from '../github-sync/state';
 import { DirBindSection } from './DirBindSection';
 import { TeamFollowSection } from './TeamFollowSection';
 import { GPSSection } from './GPSSection';
+import { BindySection } from './BindySection';
 import { checkMap } from './mapChecks';
 import { en as arkadiaEn } from '../../i18n/locales/en';
 import { plArkadia } from '../../i18n/locales/pl';
@@ -135,15 +138,19 @@ const plugin: EditorPlugin = {
   },
 
   sidebarTabs() {
-    return [{
-      id: 'github',
-      label: 'Arkadia',
-      render: () => <GitHubPanel />,
-    }];
+    return [
+      { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
+      { id: 'notes', label: 'Notatki', render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
+    ];
   },
 
   renderOverlay() {
-    return <OAuthCallback />;
+    return (
+      <>
+        <OAuthCallback />
+        <RecordingOverlay />
+      </>
+    );
   },
 
   roomPanelSections() {
@@ -151,6 +158,7 @@ const plugin: EditorPlugin = {
       { id: 'arkadia-dir-bind', render: (props) => <DirBindSection key={props.roomId} {...props} /> },
       { id: 'arkadia-team-follow', render: (props) => <TeamFollowSection key={props.roomId} {...props} /> },
       { id: 'arkadia-gps', render: (props) => <GPSSection key={props.roomId} {...props} /> },
+      { id: 'arkadia-bindy', render: (props) => <BindySection key={props.roomId} {...props} /> },
     ];
   },
 

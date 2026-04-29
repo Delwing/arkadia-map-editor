@@ -1,3 +1,13 @@
+export interface Note {
+    id: string;
+    roomId: number;
+    text: string;
+    user: string;
+    createdAt: number;
+    /** JSON-serialized Command[] from the editor undo stack. */
+    commandsJson?: string;
+}
+
 const TOKEN_KEY = 'github_sync_token';
 
 type Listener = () => void;
@@ -32,3 +42,25 @@ export interface LockOwner { user: string; expiresAt: number; }
 let _lockOwner: LockOwner | null = null;
 export function getLockOwner() { return _lockOwner; }
 export function setLockOwner(v: LockOwner | null) { _lockOwner = v; notify(); }
+
+let _notes: Note[] = [];
+export function getNotes() { return _notes; }
+export function setNotes(v: Note[]) { _notes = v; notify(); }
+
+// Recording state — lives at module level so it survives sidebar tab switches.
+let _recording = false;
+let _recordStartIdx = 0;
+let _recordedCmds: unknown[] = [];
+
+export function isRecording() { return _recording; }
+export function getRecordStartIdx() { return _recordStartIdx; }
+export function getRecordedCmds() { return _recordedCmds; }
+export function setRecordedCmds(cmds: unknown[]) { _recordedCmds = cmds; }
+
+export function startRecording(undoIdx: number) {
+    _recording = true;
+    _recordStartIdx = undoIdx;
+    _recordedCmds = [];
+    notify();
+}
+export function stopRecording() { _recording = false; notify(); }

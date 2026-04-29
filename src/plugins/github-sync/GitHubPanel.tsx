@@ -4,7 +4,9 @@ import { loadUrlIntoStore, getMapBytes } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
 import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, getProxiedBranchMapUrl, getPRChecks, getPRReviews, getRequiredApprovals, BRANCH, OpenPR, CheckRun, Review } from './api';
 import { acquireLock, releaseLock, getLockStatus } from './lock';
-import { subscribe, getToken, getSavedBytes, getHasLock, setHasLock, setSavedBytes, getMapVersion, getLockOwner, setLockOwner } from './state';
+import { store } from 'mudlet-map-editor';
+import { subscribe, getToken, getSavedBytes, getHasLock, setHasLock, setSavedBytes, getMapVersion, getLockOwner, setLockOwner, getNotes, setNotes } from './state';
+import { fetchNotes, deleteNote } from './notesApi';
 
 function checkIcon(run: CheckRun): { symbol: string; color: string } {
     if (run.status !== 'completed') return { symbol: '●', color: '#f9e2af' };
@@ -228,7 +230,10 @@ export function GitHubPanel() {
         try {
             const res = await acquireLock(token, duration);
             setStatus(res.message);
-            if (res.result) setHasLock(true);
+            if (res.result) {
+                setHasLock(true);
+                fetchNotes().then(setNotes);
+            }
         } catch (e) {
             setStatus(String(e));
         } finally {
@@ -287,6 +292,12 @@ export function GitHubPanel() {
             await releaseLock(token);
             setHasLock(false);
             setPrMessage('');
+
+            const appliedNotes = getNotes().filter((n) => n.commandsJson);
+            if (appliedNotes.length > 0) {
+                await Promise.allSettled(appliedNotes.map((n) => deleteNote(token, n.id)));
+                setNotes(await fetchNotes());
+            }
         } catch (e) {
             setStatus(t('sync.error', { error: String(e) }));
         } finally {
@@ -427,6 +438,26 @@ export function GitHubPanel() {
                 </div>
             ) : (
                 <>
+                    {(() => {
+                        const pending = getNotes().filter((n) => n.commandsJson);
+                        return pending.length > 0 ? (
+                            <div style={{ marginBottom: 12, padding: '8px 10px', background: '#2a2040', border: '1px solid #cba6f7', borderRadius: 6 }}>
+                                <p style={{ margin: '0 0 6px', color: '#cba6f7', fontWeight: 'bold', fontSize: '0.9em' }}>
+                                    {t('sync.pendingNotesTitle', { count: pending.length })}
+                                </p>
+                                <ul style={{ margin: '0 0 8px', paddingLeft: 16, fontSize: '0.85em', color: '#cdd6f4', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {pending.map((n) => (
+                                        <li key={n.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            #{n.roomId} — {n.text}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button type="button" style={{ fontSize: '0.85em' }} onClick={() => store.setState({ sidebarTab: 'notes' })}>
+                                    {t('sync.goToNotes')}
+                                </button>
+                            </div>
+                        ) : null;
+                    })()}
                     <p className="hint" style={{ color: '#ffd080', marginBottom: 8 }}>
                         {t('sync.lockActive')}{savedBytes ? ` ${t('sync.stagedReadyUpload')}` : ` ${t('sync.stageToUpload')}`}
                     </p>
