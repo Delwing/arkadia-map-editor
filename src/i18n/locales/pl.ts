@@ -74,7 +74,9 @@ export const plArkadia: ArkadiaLocale = {
     recordHint: 'Wprowadź zmiany w edytorze, a potem wróć tutaj, aby zatrzymać.',
     clearCommands: 'Wyczyść',
     apply: 'Zastosuj',
+    reapply: 'Zastosuj ponownie',
     applyTitle: 'Przejdź do pokoju i odtwórz nagrane komendy',
+    applied: 'Zastosowano w tej sesji',
   },
   sync: {
     title: 'Synchronizacja Arkadii',

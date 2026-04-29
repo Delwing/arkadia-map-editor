@@ -72,7 +72,9 @@ export const en = {
     recordHint: 'Make any changes in the editor, then return here to stop.',
     clearCommands: 'Clear',
     apply: 'Apply',
+    reapply: 'Re-apply',
     applyTitle: 'Navigate to room and replay all recorded commands',
+    applied: 'Applied this session',
   },
   sync: {
     title: 'Arkadia Sync',

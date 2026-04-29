@@ -1,7 +1,7 @@
 export interface Note {
     id: string;
     roomId: number;
-    text: string;
+    text?: string;
     user: string;
     createdAt: number;
     /** JSON-serialized Command[] from the editor undo stack. */
@@ -46,6 +46,10 @@ export function setLockOwner(v: LockOwner | null) { _lockOwner = v; notify(); }
 let _notes: Note[] = [];
 export function getNotes() { return _notes; }
 export function setNotes(v: Note[]) { _notes = v; notify(); }
+
+const _appliedNoteIds = new Set<string>();
+export function markNoteAppliedLocally(id: string) { _appliedNoteIds.add(id); notify(); }
+export function isNoteAppliedLocally(id: string) { return _appliedNoteIds.has(id); }
 
 // Recording state — lives at module level so it survives sidebar tab switches.
 let _recording = false;

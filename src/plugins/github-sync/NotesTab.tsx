@@ -5,6 +5,7 @@ import {
     subscribe, getToken, getNotes, setNotes,
     isRecording, getRecordStartIdx, startRecording, stopRecording,
     getRecordedCmds, setRecordedCmds,
+    markNoteAppliedLocally, isNoteAppliedLocally,
 } from './state';
 import { fetchNotes, addNote, deleteNote } from './notesApi';
 import type { Note } from './state';
@@ -77,6 +78,7 @@ function applyNoteCommands(note: Note, sceneRef: { current: any }) {
     sceneRef.current?.refresh?.();
     if (structural) store.bumpStructure();
     else store.bumpData();
+    markNoteAppliedLocally(note.id);
 }
 
 interface NotesTabProps {
@@ -301,18 +303,18 @@ export function NotesTab({ sceneRef }: NotesTabProps) {
                                     >
                                         #{note.roomId}{roomName && String(note.roomId) !== roomName ? ` · ${roomName}` : ''}
                                     </button>
-                                    {token && (
-                                        <button
-                                            type="button"
-                                            disabled={busy}
-                                            onClick={() => handleDelete(note.id)}
-                                            style={{ marginLeft: 'auto', padding: '2px 8px', fontSize: '0.8em', color: '#f38ba8' }}
-                                        >
-                                            {t('notes.delete')}
-                                        </button>
-                                    )}
+                                    <button
+                                        type="button"
+                                        disabled={busy}
+                                        onClick={() => handleDelete(note.id)}
+                                        style={{ marginLeft: 'auto', padding: '2px 8px', fontSize: '0.8em', color: '#f38ba8' }}
+                                    >
+                                        {t('notes.delete')}
+                                    </button>
                                 </div>
-                                <p style={{ margin: '0 0 4px', fontSize: '0.9em', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{note.text}</p>
+                                {note.text && (
+                                    <p style={{ margin: '0 0 4px', fontSize: '0.9em', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>{note.text}</p>
+                                )}
                                 {cmds && cmds.length > 0 && (
                                     <div style={{ marginBottom: 4, maxHeight: 80, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
                                         {flattenCmds(cmds).map((cmd, i) => (
@@ -320,6 +322,12 @@ export function NotesTab({ sceneRef }: NotesTabProps) {
                                                 {summarizeCmd(cmd)}
                                             </span>
                                         ))}
+                                    </div>
+                                )}
+                                {isNoteAppliedLocally(note.id) && (
+                                    <div style={{ marginBottom: 4, fontSize: '0.75em', color: '#a6e3a1', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span>✓</span>
+                                        <span>{t('notes.applied')}</span>
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -331,10 +339,10 @@ export function NotesTab({ sceneRef }: NotesTabProps) {
                                             type="button"
                                             disabled={busy}
                                             onClick={() => applyNoteCommands(note, sceneRef)}
-                                            style={{ fontSize: '0.8em', padding: '2px 8px', color: '#a6e3a1' }}
+                                            style={{ fontSize: '0.8em', padding: '2px 8px', color: isNoteAppliedLocally(note.id) ? '#6c7086' : '#a6e3a1' }}
                                             title={t('notes.applyTitle')}
                                         >
-                                            {t('notes.apply')}
+                                            {t(isNoteAppliedLocally(note.id) ? 'notes.reapply' : 'notes.apply')}
                                         </button>
                                     )}
                                 </div>

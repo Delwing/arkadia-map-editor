@@ -22,6 +22,14 @@ export async function addNote(
     return res.json();
 }
 
+export async function markNoteApplied(token: string, noteId: string): Promise<{ message: string }> {
+    const res = await fetch(`${LOCK_API}/api/notes/${noteId}/applied`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    try { return await res.json(); } catch { return { message: '' }; }
+}
+
 export async function deleteNote(token: string, noteId: string): Promise<{ message: string }> {
     const res = await fetch(`${LOCK_API}/api/notes/${noteId}`, {
         method: 'DELETE',
