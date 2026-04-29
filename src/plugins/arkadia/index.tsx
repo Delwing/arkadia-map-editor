@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { subscribe, getNotes, setNotes } from '../github-sync/state';
+import { fetchNotes } from '../github-sync/notesApi';
 import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
 import { addTranslations } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
@@ -74,6 +76,18 @@ const POI: SwatchSet = {
   ],
 };
 
+function NotesTabLabel() {
+  const [, rerender] = useState(0);
+  useEffect(() => subscribe(() => rerender((n) => n + 1)), []);
+  const count = getNotes().length;
+  return (
+    <>
+      Notatki
+      {count > 0 && <span className="tab-badge">{count}</span>}
+    </>
+  );
+}
+
 function OAuthCallback() {
   const [msg, setMsg] = useState('');
 
@@ -119,7 +133,9 @@ function OAuthCallback() {
 const plugin: EditorPlugin = {
   id: 'arkadia',
 
-  async onAppReady() {},
+  async onAppReady() {
+    fetchNotes().then(setNotes);
+  },
 
   onMapOpened(map) {
     setMapVersion(map.mUserData?.['version'] ?? null);
@@ -140,7 +156,7 @@ const plugin: EditorPlugin = {
   sidebarTabs() {
     return [
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
-      { id: 'notes', label: 'Notatki', render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
+      { id: 'notes', label: <NotesTabLabel />, render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
     ];
   },
 
