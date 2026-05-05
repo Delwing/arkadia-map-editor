@@ -953,10 +953,10 @@ mudlet-map-binary-reader@^0.9.0:
     lodash "4.18.0"
     qtdatastream "^1.1.0"
 
-mudlet-map-editor@0.17.0:
-  version "0.17.0"
-  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.17.0.tgz#b1099a3949a4bfaa3dded8e2f326444164bffb1a"
-  integrity sha512-lTGG2Mf7BKqFnm2gmxXEvCTVy0sAZqghvK05rMW5q3dVZFpwjKKqHNSiwFUWC+OCKcBrchPTY4Vvp5TnD9r/vA==
+mudlet-map-editor@0.18.0:
+  version "0.18.0"
+  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.18.0.tgz#96092116d85ae1779f41310c25cf53de25529f82"
+  integrity sha512-SIn5+QF27Vt9iY1VA0F66m+G/q7TIY1xV2BFdWoJ8H6SrybzO1lnH1eAFp5ACQR/9IJFOrmtZNIH2Y0240NfwQ==
   dependencies:
     "@monaco-editor/react" "^4.7.0"
     i18next "^26.0.8"
