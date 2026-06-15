@@ -953,25 +953,25 @@ mudlet-map-binary-reader@^0.9.0:
     lodash "4.18.0"
     qtdatastream "^1.1.0"
 
-mudlet-map-editor@0.17.0:
-  version "0.17.0"
-  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.17.0.tgz#b1099a3949a4bfaa3dded8e2f326444164bffb1a"
-  integrity sha512-lTGG2Mf7BKqFnm2gmxXEvCTVy0sAZqghvK05rMW5q3dVZFpwjKKqHNSiwFUWC+OCKcBrchPTY4Vvp5TnD9r/vA==
+mudlet-map-editor@0.22.1:
+  version "0.22.1"
+  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-0.22.1.tgz#b51e872660fd8be52fa6cce42a4c5e32e111e6ed"
+  integrity sha512-47xupAoxJh3Jr+2zDPSABu4FZmQzMTbO20+pGxk6odg9osrGpEeRTsIqcPnomLsqWxDMR1YIIEGu+QfqxHk2Zw==
   dependencies:
     "@monaco-editor/react" "^4.7.0"
     i18next "^26.0.8"
     konva "^10.2.5"
     monaco-editor "^0.55.1"
     mudlet-map-binary-reader "^0.9.0"
-    mudlet-map-renderer "0.42.1-konva"
+    mudlet-map-renderer "^2.3.1"
     react "^19.2.5"
     react-dom "^19.2.5"
     react-i18next "^17.0.6"
 
-mudlet-map-renderer@0.42.1-konva:
-  version "0.42.1-konva"
-  resolved "https://registry.yarnpkg.com/mudlet-map-renderer/-/mudlet-map-renderer-0.42.1-konva.tgz#33f8f4847518df82176103a8acd05a0da53ca526"
-  integrity sha512-RCKlXAE2VtHMrLHiVn2/3IhRdIesI7Bz8mNVpmlJGFiVZutu8PVxGaNc5FwyZLOhR6h8lCpySge3LAYeF3LNNg==
+mudlet-map-renderer@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/mudlet-map-renderer/-/mudlet-map-renderer-2.3.1.tgz#509a191c2ec16dc60dbc9e81e068a2fb6faaf2f3"
+  integrity sha512-ZKmhVwHB/i8+DeXfHr/V6y03aWTfGvKRrmm+sA7MzqQKY7v8jIYP6Pvj61rddCX0pPkkFzJc2Y/sh5vYZ3WoTA==
   dependencies:
     konva "^10.2.4"
     node-dijkstra "^2.5.1"
