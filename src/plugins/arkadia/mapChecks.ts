@@ -31,44 +31,44 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
     // dir_bind: key must be a short dir, command must not be empty
     const dirBindRaw = ud?.['dir_bind'];
     if (dirBindRaw) {
-      for (const pair of dirBindRaw.split('&').filter(Boolean)) {
+      dirBindRaw.split('&').filter(Boolean).forEach((pair, idx) => {
         const eq = pair.indexOf('=');
         const dir = eq === -1 ? pair : pair.slice(0, eq);
         const cmd = eq === -1 ? '' : pair.slice(eq + 1);
         if (!VALID_DIRS.has(dir)) {
           results.push({
-            id: `dir-bind-invalid-key:${roomId}:${dir}`,
+            id: `dir-bind-invalid-key:${roomId}:${idx}:${dir}`,
             message: i18n.t('checks.dirBindInvalidDirMsg', { ns: 'arkadia', dir }),
             detail: i18n.t('checks.dirBindInvalidDirDetail', { ns: 'arkadia', roomId, dir }),
             roomId,
           });
         } else if (!cmd.trim()) {
           results.push({
-            id: `dir-bind-empty-cmd:${roomId}:${dir}`,
+            id: `dir-bind-empty-cmd:${roomId}:${idx}:${dir}`,
             message: i18n.t('checks.dirBindEmptyCmdMsg', { ns: 'arkadia', dir }),
             detail: i18n.t('checks.dirBindEmptyCmdDetail', { ns: 'arkadia', roomId, dir }),
             roomId,
           });
         }
-      }
+      });
     }
 
     // team_follow_link: "to" must be an actual exit of this room
     const teamFollowRaw = ud?.['team_follow_link'];
     if (teamFollowRaw) {
       const exits = getRoomExits(room);
-      for (const pair of teamFollowRaw.split('#').filter(Boolean)) {
+      teamFollowRaw.split('#').filter(Boolean).forEach((pair, idx) => {
         const star = pair.indexOf('*');
         const to = star === -1 ? '' : pair.slice(star + 1);
         if (to && !exits.has(to)) {
           results.push({
-            id: `team-follow-invalid-exit:${roomId}:${to}`,
+            id: `team-follow-invalid-exit:${roomId}:${idx}:${to}`,
             message: i18n.t('checks.teamFollowBadExitMsg', { ns: 'arkadia', exit: to }),
             detail: i18n.t('checks.teamFollowBadExitDetail', { ns: 'arkadia', roomId, exit: to }),
             roomId,
           });
         }
-      }
+      });
     }
 
     // gps: every entry must have at least one trigger line
