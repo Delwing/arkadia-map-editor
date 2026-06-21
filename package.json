@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "mudlet-map-editor": "0.23.0"
+    "mudlet-map-editor": "0.23.1"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

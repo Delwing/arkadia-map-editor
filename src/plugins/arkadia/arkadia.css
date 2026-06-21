@@ -51,20 +51,21 @@
   color: #55606f;
 }
 
-.gps-list .gps-area-select {
+.gps-list .gps-field .gps-area-select {
   font-size: 12px;
+  line-height: normal;
   background: rgba(6, 9, 16, 0.6);
   color: #e6e9ef;
   border: 1px solid rgba(143, 184, 255, 0.15);
   border-radius: 4px;
   padding: 2px 5px;
-  height: 22px;
+  height: 24px;
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
 }
 
-.gps-list .gps-area-select:focus {
+.gps-list .gps-field .gps-area-select:focus {
   outline: none;
   border-color: rgba(143, 184, 255, 0.35);
 }
