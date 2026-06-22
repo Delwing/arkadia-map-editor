@@ -43,7 +43,7 @@ function DirEntryCard({ dir, cmd, onUpdate, onRemove }: {
   return (
     <div className="gps-entry">
       <div className="gps-entry-header">
-        <span className="gps-entry-index">{dir}</span>
+        <span className="dir-bind-dir">{dir}</span>
         <button type="button" className="ud-delete" title={t('common.remove')} onClick={onRemove}>×</button>
       </div>
       <div className="gps-field">
