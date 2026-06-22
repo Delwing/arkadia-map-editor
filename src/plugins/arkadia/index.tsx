@@ -5,6 +5,7 @@ import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
 import { addTranslations } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
 import { NotesTab } from '../github-sync/NotesTab';
+import { ChangesTab, ChangesTabLabel } from '../github-sync/ChangesTab';
 import { RecordingOverlay } from '../github-sync/RecordingOverlay';
 import { exchangeCode, setToken } from '../github-sync/auth';
 import { setSavedBytes, setMapVersion } from '../github-sync/state';
@@ -157,6 +158,7 @@ const plugin: EditorPlugin = {
     return [
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
       { id: 'notes', label: <NotesTabLabel />, render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
+      { id: 'changes', label: <ChangesTabLabel />, render: () => <ChangesTab /> },
     ];
   },
 

@@ -78,6 +78,23 @@ export const plArkadia: ArkadiaLocale = {
     applyTitle: 'Przejdź do pokoju i odtwórz nagrane komendy',
     applied: 'Zastosowano w tej sesji',
   },
+  changes: {
+    tab: 'Zmiany',
+    title: 'Historia zmian',
+    selectHint: 'Zaznacz pokój lub etykietę, aby zobaczyć historię zmian.',
+    showingObject: 'Historia: {{name}}',
+    showingArea: 'Historia obszaru: {{name}}',
+    labelTitle: 'Etykieta #{{id}}',
+    areaMode: 'Cały obszar',
+    areaModeTitle: 'Pokaż zmiany całego bieżącego obszaru zamiast zaznaczonego obiektu',
+    loading: 'Ładowanie…',
+    empty: '— brak zapisanych zmian —',
+    type: {
+      added: 'dodano',
+      deleted: 'usunięto',
+      updated: 'zmieniono',
+    },
+  },
   sync: {
     title: 'Synchronizacja Arkadii',
     loginHint: 'Zaloguj się, aby zablokować i przesłać aktualizacje mapy.',

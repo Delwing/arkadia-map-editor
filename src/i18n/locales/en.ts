@@ -76,6 +76,23 @@ export const en = {
     applyTitle: 'Navigate to room and replay all recorded commands',
     applied: 'Applied this session',
   },
+  changes: {
+    tab: 'Changes',
+    title: 'Change History',
+    selectHint: 'Select a room or label to see its change history.',
+    showingObject: 'History for {{name}}',
+    showingArea: 'Area history: {{name}}',
+    labelTitle: 'Label #{{id}}',
+    areaMode: 'Whole area',
+    areaModeTitle: 'Show changes for the whole current area instead of the selected object',
+    loading: 'Loading…',
+    empty: '— no recorded changes —',
+    type: {
+      added: 'added',
+      deleted: 'deleted',
+      updated: 'updated',
+    },
+  },
   sync: {
     title: 'Arkadia Sync',
     loginHint: 'Login to acquire a lock and submit map updates.',
