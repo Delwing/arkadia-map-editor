@@ -5,21 +5,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Vite dev server
-npm run build        # TypeScript check + Vite production build
-npm run preview      # Preview production build locally
+yarn dev             # Vite dev server
+yarn build           # TypeScript check + Vite production build
+yarn preview         # Preview production build locally
 ```
 
-There are no test commands. TypeScript strict mode (`noUnusedLocals`, `noUnusedParameters`) serves as the primary static check; `npm run build` will catch type errors.
+This project uses **yarn** (`yarn.lock` is the committed lockfile; CI installs with `yarn install --frozen-lockfile`). Avoid `npm install`, which would create a competing `package-lock.json`.
+
+There are no test commands. TypeScript strict mode (`noUnusedLocals`, `noUnusedParameters`) serves as the primary static check; `yarn build` will catch type errors.
 
 ## Local Development Setup
 
-This project depends on `mudlet-map-editor` as a local file dependency (`../mudlet-map-editor`). That sibling repo must be built first:
+This project depends on `mudlet-map-editor` as a **published npm package** (pinned in `package.json` / `yarn.lock`). Install and go:
 
 ```bash
-cd ../mudlet-map-editor && npm run build:lib
-cd ../arkadia-map-editor && npm install
+yarn install
 ```
+
+The sibling repo at `../mudlet-map-editor` is the upstream source for that package, but this app does not build or link it locally — bumping the version means changing the `mudlet-map-editor` version in `package.json` and running `yarn install`. Building the sibling's library (`yarn build:lib`) only matters when publishing a new version of it to npm.
 
 Copy `.env.local.example` to `.env.local` and fill in the values:
 
@@ -78,4 +81,4 @@ No Redux or Context — state is a plain module with exported getters/setters an
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) deploys to GitHub Pages on push to `main`. It checks out both this repo and `mudlet-map-editor` side-by-side, builds the library first, then builds this app with production env vars from repository secrets.
+GitHub Actions (`.github/workflows/deploy.yml`) deploys to GitHub Pages on push to `master`. It checks out this repo, runs `yarn install --frozen-lockfile` (pulling `mudlet-map-editor` from npm), then builds with production env vars from repository secrets.
