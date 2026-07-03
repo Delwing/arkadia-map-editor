@@ -213,8 +213,8 @@ export function GitHubPanel() {
         getPRReviews(token, existingPR.number).then(setReviews);
     }, [token, existingPR?.number, existingPR?.head.sha]);
 
-    const handleSave = () => {
-        const bytes = getMapBytes();
+    const handleSave = async () => {
+        const bytes = await getMapBytes();
         if (!bytes) { setStatus(t('sync.noMapLoaded')); return; }
         setSavedBytes(bytes);
         setStatus(t('sync.mapStaged'));
