@@ -950,10 +950,10 @@ mudlet-map-binary-reader@^1.0.3:
   dependencies:
     qtdatastream-web "^0.0.1"
 
-mudlet-map-editor@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-1.1.0.tgz#c9bcfcfe362924a1cef3f39fa1f9ed5c32f8fba4"
-  integrity sha512-2WKzrQ0PVqYBgljS5qHKborjt3I+Fn7TV1tsThRYFjC28ihCVFyeAG/+gwAgfr7yyspTmrCO7z0XJNJLzLRoQA==
+mudlet-map-editor@1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/mudlet-map-editor/-/mudlet-map-editor-1.2.0.tgz#d9f17932390f8182c4ebb13dab7496bbfe9f0137"
+  integrity sha512-wiuWFQggSpkHQW3xC0jRBCBG6ls0yMEGXwCy+b+lCs6dddIWOIUAYhRYsPoeaw5qxsWyCphDaATmI4TBK4ysrQ==
   dependencies:
     "@monaco-editor/react" "^4.7.0"
     i18next "^26.0.8"
