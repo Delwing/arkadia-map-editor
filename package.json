@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "mudlet-map-editor": "1.2.0",
+    "mudlet-map-editor": "1.3.3",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
