@@ -10,7 +10,7 @@ const GPS_KEY = 'gps';
 interface GpsEntry {
   room_id: number;
   gps_string_lines: string[];
-  line_delta: number;
+  line_delta?: number;
   area_name?: string;
   within_room_ids?: number[];
   _uid?: string; // UI-only stable key, stripped before saving
@@ -25,14 +25,19 @@ function parseGps(data: Record<string, string> | undefined): GpsEntry[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((e: GpsEntry) => ({ ...e, _uid: nextUid() }));
+    return parsed.map((e: GpsEntry) => ({
+      ...e,
+      // 0 / negative is meaningless for the Mudlet side — treat it as "auto"
+      line_delta: typeof e.line_delta === 'number' && e.line_delta > 0 ? e.line_delta : undefined,
+      _uid: nextUid(),
+    }));
   } catch {
     return [];
   }
 }
 
 function blankEntry(roomId: number): GpsEntry {
-  return { room_id: roomId, gps_string_lines: [], line_delta: 0, _uid: nextUid() };
+  return { room_id: roomId, gps_string_lines: [], _uid: nextUid() };
 }
 
 function resizeTriggerTextarea(el: HTMLTextAreaElement) {
@@ -149,11 +154,15 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         <input
           type="number"
           className="gps-small-input"
-          key={`gps-ld-${idx}-${entry.line_delta}`}
-          defaultValue={entry.line_delta}
+          min={cleanCount}
+          placeholder={t('gps.lineDeltaAuto', { n: cleanCount })}
+          key={`gps-ld-${idx}-${entry.line_delta ?? ''}`}
+          defaultValue={entry.line_delta ?? ''}
           onBlur={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (!isNaN(v) && v !== entry.line_delta) onUpdate({ line_delta: v });
+            const raw = e.target.value.trim();
+            const v = raw === '' ? undefined : parseInt(raw, 10);
+            if (v !== undefined && isNaN(v)) return;
+            if (v !== entry.line_delta) onUpdate({ line_delta: v });
           }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
@@ -214,12 +223,19 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
         />
       </div>
       <div className="gps-field">
-        <label className="gps-field-label">{t('gps.lineDelta')}</label>
+        <label className="gps-field-label" title={t('gps.lineDeltaTitle')}>{t('gps.lineDelta')}</label>
         <input
           type="number"
           className="gps-small-input"
-          value={draft.line_delta}
-          onChange={(e) => { const v = parseInt(e.target.value, 10); if (!isNaN(v)) onChange({ line_delta: v }); }}
+          min={cleanCount}
+          placeholder={t('gps.lineDeltaAuto', { n: cleanCount })}
+          value={draft.line_delta ?? ''}
+          onChange={(e) => {
+            const raw = e.target.value.trim();
+            if (raw === '') { onChange({ line_delta: undefined }); return; }
+            const v = parseInt(raw, 10);
+            if (!isNaN(v)) onChange({ line_delta: v });
+          }}
         />
       </div>
       <div className="gps-field">
