@@ -127,7 +127,7 @@ export function getProxiedBranchMapUrl(): string {
     return `${import.meta.env.VITE_LOCK_API_URL}/api/map/branch`;
 }
 
-export async function createPR(token: string, title: string, body: string): Promise<{ number: number; html_url: string }> {
+export async function createPR(token: string, title: string, body: string): Promise<OpenPR> {
     const res = await fetch(`${REPO_API}/pulls`, {
         method: 'POST',
         headers: headers(token),

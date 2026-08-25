@@ -284,9 +284,8 @@ export function GitHubPanel() {
             await uploadFile(token, uint8ToBase64(savedBytes), fileSha);
 
             setStatus(t('sync.creatingPR'));
-            await createPR(token, prMessage || 'Map update', prMessage);
-            const freshPRs = await getOpenPRs(token);
-            setExistingPR(freshPRs[0] ?? null);
+            const pr = await createPR(token, prMessage || 'Map update', prMessage);
+            setExistingPR(pr);
             setStatus(t('sync.prCreated'));
 
             await releaseLock(token);
@@ -301,6 +300,7 @@ export function GitHubPanel() {
         } catch (e) {
             setStatus(t('sync.error', { error: String(e) }));
         } finally {
+            await refreshLockStatus();
             setBusy(false);
         }
     };
