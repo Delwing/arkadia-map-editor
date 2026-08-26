@@ -15,7 +15,6 @@
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
-    "@arkadia/plugin-types": "https://delwing.github.io/arkadia-web-client-extension/arkadia-plugin-types.tgz",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

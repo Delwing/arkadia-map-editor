@@ -85,7 +85,7 @@ Connects a running [arkadia-web-client-extension](https://github.com/Delwing/ark
 | `src/plugins/arkadia/areaSync.ts` | Works out which areas a command touched and exports them (and the whole map) in the client's format, via the binary reader's own `convertRoom`/`convertLabel`/`readerExport`. |
 | `src/plugins/arkadia/ClientTab.tsx` | "Klient" sidebar tab — status, follow/live-edit toggles, map push, current position, capture log. |
 
-The client half of live edit lives in the **sibling repo**: `api.map.applyChanges` / `syncAreas` / `replaceMap`, implemented in `arkadia-web-client-extension`'s `src/shared/map/MapHelper.ts`. Adding to that API means regenerating `plugin-types` there and republishing the tarball **before** this repo can typecheck against it.
+The client half of live edit lives in the **sibling repo**: `api.map.applyChanges` / `syncAreas` / `replaceMap`, implemented in `arkadia-web-client-extension`'s `src/shared/map/MapHelper.ts`. Calling a newly added member from here means adding it to `src/client-plugin/arkadia-plugin-api.d.ts` too — and shipping the client change first, since the plugin will call it at runtime.
 
 **Transport.** Both apps deploy to the same GitHub Pages origin, so a plain `BroadcastChannel` reaches every tab and needs no configuration — that is the whole reason for hosting the plugin here. Cross-origin setups tunnel through a hidden iframe pointing at `bridge.html` on the editor's origin instead. That path is **opt-in**, set from the game with `/edytor polacz <editor url>` (or by hand via `localStorage.arkadiaMapEditorOrigin`); `/edytor polacz` with no argument clears it. `/edytor status` reports which transport is live, and the "Klient" tab shows the exact command when the editor is on localhost.
 
@@ -95,7 +95,9 @@ The client half of live edit lives in the **sibling repo**: `api.map.applyChange
 
 **Never use `import.meta` (or any module-only syntax beyond the exports) in `src/client-plugin/`.** The host loads plugins with `import()` and, when that fails, retries by injecting a classic `<script src>` — which cannot execute an ES module at all. The fallback therefore dies on the first module-only construct in the file, so a plain *module-load* failure (CORS, 404, mixed content) surfaces as a confusing `SyntaxError` pointing at that construct instead of at the real cause. When a plugin won't load, ignore the syntax error and look for `[PluginManager] Module load error:` in the console — that line has the actual reason.
 
-**Typing.** The plugin is written against `@arkadia/plugin-types`, a devDependency pulled from a tarball on the client's own Pages site (`https://delwing.github.io/arkadia-web-client-extension/arkadia-plugin-types.tgz`) — the same way the sibling `arkadia-mc-js` plugin consumes it. It is types-only, so `import type` erases it entirely and the bundle stays self-contained.
+**Typing.** The plugin declares the host API itself, in `src/client-plugin/arkadia-plugin-api.d.ts` — a narrow declaration of only the members it calls.
+
+It deliberately does *not* depend on the client's published `@arkadia/plugin-types` tarball, even though `arkadia-mc-js` does. That artifact is rebuilt with a fresh timestamp version on every client deploy, so its hash changes even when the types don't; pinning it in `yarn.lock` breaks `yarn install --frozen-lockfile` here after any unrelated client release. `arkadia-mc-js` gets away with it because it has no frozen-lockfile CI install. Keeping the declaration local lets the two repos deploy independently — at the cost of updating it by hand when the client's API changes.
 
 **Messages.** Client → editor: `client-hello` (20s heartbeat carrying the client's room count), `client-bye`, `position`, `set-room-name`, `request-map`. Editor → client: `editor-hello` (map name + room count), `editor-bye`, `result`, `sync-areas`, `push-map`.
 
