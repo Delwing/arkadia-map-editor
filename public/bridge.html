@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Arkadia map bridge relay</title>
+</head>
+<body>
+<!--
+  Cross-origin relay for the editor ⇄ Arkadia web client bridge.
+
+  BroadcastChannel is strictly same-origin. In production both apps are served
+  from the same GitHub Pages origin so they never need this page. During local
+  development they sit on different Vite ports, so the client plugin embeds this
+  page (served from the editor's origin) in a hidden iframe and tunnels its
+  traffic through it.
+
+  The parent allowlist below mirrors `server.cors` in vite.config.ts: its own
+  origin, loopback (a locally-run client), and the published client. The last
+  one matters — the common dev setup is the *published* client driving a local
+  editor, and leaving it out makes the handshake fail silently. A stranger's
+  site embedding this page still gets nothing.
+-->
+<script>
+  (function () {
+    var CHANNEL = 'arkadia-map-bridge';
+    var VERSION = 1;
+    var PUBLISHED_CLIENT = 'https://delwing.github.io';
+
+    function isAllowedOrigin(origin) {
+      if (origin === location.origin) return true;
+      if (origin === PUBLISHED_CLIENT) return true;
+      return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    }
+
+    function isEnvelope(data) {
+      return data
+        && typeof data === 'object'
+        && data.ch === CHANNEL
+        && data.v === VERSION
+        && typeof data.from === 'string'
+        && (data.role === 'client' || data.role === 'editor')
+        && data.msg
+        && typeof data.msg === 'object'
+        && typeof data.msg.t === 'string';
+    }
+
+    if (typeof BroadcastChannel === 'undefined') return;
+
+    var channel = new BroadcastChannel(CHANNEL);
+    var parentOrigin = null;
+
+    // Channel → parent. Only ever forwards well-formed envelopes.
+    channel.onmessage = function (e) {
+      if (!parentOrigin || !isEnvelope(e.data)) return;
+      parent.postMessage(e.data, parentOrigin);
+    };
+
+    // Parent → channel.
+    window.addEventListener('message', function (e) {
+      if (e.source !== parent || !isAllowedOrigin(e.origin)) return;
+      var data = e.data;
+      if (!data || typeof data !== 'object' || data.ch !== CHANNEL) return;
+
+      if (data.relay === 'hello') {
+        parentOrigin = e.origin;
+        parent.postMessage({ ch: CHANNEL, relay: 'ready' }, parentOrigin);
+        return;
+      }
+      if (isEnvelope(data)) channel.postMessage(data);
+    });
+  })();
+</script>
+</body>
+</html>

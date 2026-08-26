@@ -6,3 +6,5 @@ dist-lib
 *.tsbuildinfo
 .idea/
 .claude/settings.local.json
+# Built by build:client-plugin, served out of public/
+public/client-plugin.js
