@@ -274,3 +274,115 @@
   color: #8fb8ff;
   border-color: rgba(143, 184, 255, 0.35);
 }
+
+/* ── Game-client bridge tab ── */
+
+.client-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.client-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #55606f;
+  flex: none;
+}
+
+.client-status--on { color: #a6e3a1; }
+.client-status--on .client-status-dot { background: #a6e3a1; }
+.client-status--off { color: #55606f; }
+
+/* Marks the tab itself while a client is live, so the connection is visible
+   without switching to this tab. */
+.client-tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a6e3a1;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.client-plugin-url {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.client-plugin-url code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: rgba(6, 9, 16, 0.6);
+  border: 1px solid rgba(143, 184, 255, 0.15);
+  border-radius: 4px;
+  padding: 3px 5px;
+  font-size: 11px;
+  color: #8fb8ff;
+}
+
+.client-plugin-url button { flex: none; }
+
+.client-position {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  background: rgba(8, 12, 20, 0.55);
+  border: 1px solid rgba(143, 184, 255, 0.1);
+  border-radius: 5px;
+  padding: 6px 8px;
+}
+
+.client-room-id {
+  color: #8fb8ff;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+button.client-room-id {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button.client-room-id:hover { text-decoration: underline; }
+
+.client-applied {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.client-applied li {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.client-applied-from,
+.client-applied-to {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-applied-from { color: #55606f; }
+.client-applied-arrow { color: #55606f; flex: none; }
+.client-applied-to { color: #e6e9ef; }

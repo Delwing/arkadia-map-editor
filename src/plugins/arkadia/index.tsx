@@ -13,6 +13,8 @@ import { DirBindSection } from './DirBindSection';
 import { TeamFollowSection } from './TeamFollowSection';
 import { GPSSection } from './GPSSection';
 import { BindySection } from './BindySection';
+import { ClientTab, ClientTabLabel } from './ClientTab';
+import { announce, captureSceneRef, onMapClosed as clientBridgeMapClosed, startClientBridge } from './clientBridge';
 import { checkMap } from './mapChecks';
 import { en as arkadiaEn } from '../../i18n/locales/en';
 import { plArkadia } from '../../i18n/locales/pl';
@@ -136,14 +138,18 @@ const plugin: EditorPlugin = {
 
   async onAppReady() {
     fetchNotes().then(setNotes);
+    startClientBridge();
   },
 
   onMapOpened(map) {
     setMapVersion(map.mUserData?.['version'] ?? null);
+    // Let a connected client know which map it is now talking to.
+    announce();
   },
 
   onMapClosed() {
     setMapVersion(null);
+    clientBridgeMapClosed();
   },
 
   onMapSave(bytes) {
@@ -159,6 +165,7 @@ const plugin: EditorPlugin = {
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
       { id: 'notes', label: <NotesTabLabel />, render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
       { id: 'changes', label: <ChangesTabLabel />, render: () => <ChangesTab /> },
+      { id: 'client', label: <ClientTabLabel />, render: (sceneRef) => <ClientTab sceneRef={sceneRef} /> },
     ];
   },
 
@@ -173,6 +180,9 @@ const plugin: EditorPlugin = {
 
   roomPanelSections() {
     return [
+      // Selecting any room latches the scene ref for the client bridge, so a
+      // captured name updates the renderer without a full structural rebuild.
+      { id: 'arkadia-scene-ref', render: (props) => { captureSceneRef(props.sceneRef); return null; } },
       { id: 'arkadia-dir-bind', render: (props) => <DirBindSection key={props.roomId} {...props} /> },
       { id: 'arkadia-team-follow', render: (props) => <TeamFollowSection key={props.roomId} {...props} /> },
       { id: 'arkadia-gps', render: (props) => <GPSSection key={props.roomId} {...props} /> },

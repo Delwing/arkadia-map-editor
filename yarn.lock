@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@arkadia/plugin-types@https://delwing.github.io/arkadia-web-client-extension/arkadia-plugin-types.tgz":
+  version "1.0.0-20260402230708"
+  resolved "https://delwing.github.io/arkadia-web-client-extension/arkadia-plugin-types.tgz#f499f7093ceaa7cc4c7279ac8f9aa4d3f7e1120c"
+
 "@babel/runtime@^7.29.7":
   version "7.29.7"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.7.tgz#12022450c45a4da6d8d8287b18a4ff2ddb23f768"
