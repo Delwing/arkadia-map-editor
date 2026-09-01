@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { subscribe, getNotes, setNotes } from '../github-sync/state';
 import { fetchNotes } from '../github-sync/notesApi';
 import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
-import { addTranslations } from 'mudlet-map-editor';
+import { addTranslations, store } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
 import { NotesTab } from '../github-sync/NotesTab';
 import { ChangesTab, ChangesTabLabel } from '../github-sync/ChangesTab';
@@ -22,6 +22,13 @@ import { plArkadia } from '../../i18n/locales/pl';
 // Register plugin translations before the app renders
 addTranslations('en', 'arkadia', arkadiaEn);
 addTranslations('pl', 'arkadia', plArkadia);
+
+// Open on the "Arkadia" tab rather than the built-in selection panel — fetching
+// the map and taking the lock is the first thing anyone does here. Set at module
+// scope (plugins are imported before <App/> mounts) instead of in onAppReady,
+// which runs after the first paint and would flash the selection panel. Picking
+// a room still flips the panel to the selection tab as usual.
+store.setState({ sidebarTab: 'github' });
 
 const TERENY: SwatchSet = {
   id: 'arkadia-tereny',
