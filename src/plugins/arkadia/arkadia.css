@@ -386,3 +386,47 @@ button.client-room-id:hover { text-decoration: underline; }
 .client-applied-from { color: #55606f; }
 .client-applied-arrow { color: #55606f; flex: none; }
 .client-applied-to { color: #e6e9ef; }
+
+/* ── Save → PR prompt ── */
+
+/* Shown after the toolbar's save button names the next step. Mirrors
+   the editor's own .incoming-banner chrome so it reads as part of the app;
+   `right` is set inline by SaveToast so it clears the side panel at whatever
+   width the panel currently has. */
+.ark-save-toast {
+  position: fixed;
+  top: 104px;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 380px;
+  padding: 8px 12px;
+  background: rgba(10, 14, 24, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(143, 184, 255, 0.18);
+  border-radius: 7px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.ark-save-toast-text {
+  font-size: 12px;
+  color: #e6e9ef;
+}
+
+/* A step is still missing before the edits can be submitted. */
+.ark-save-toast--warn {
+  border-color: rgba(255, 208, 128, 0.4);
+}
+
+.ark-save-toast--warn .ark-save-toast-text {
+  color: #ffd080;
+}
+
+.ark-save-toast .context-menu-btn {
+  flex: none;
+  white-space: nowrap;
+}

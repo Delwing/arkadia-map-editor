@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
-import { loadUrlIntoStore, getMapBytes } from 'mudlet-map-editor';
+import { loadUrlIntoStore, useEditorState } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
 import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, getProxiedBranchMapUrl, getPRChecks, getPRReviews, getRequiredApprovals, BRANCH, OpenPR, CheckRun, Review } from './api';
 import { acquireLock, releaseLock, getLockStatus } from './lock';
 import { store } from 'mudlet-map-editor';
-import { subscribe, getToken, getSavedBytes, getHasLock, setHasLock, setSavedBytes, getMapVersion, getLockOwner, setLockOwner, getNotes, setNotes } from './state';
+import { subscribe, getToken, getHasLock, setHasLock, getMapVersion, getLockOwner, setLockOwner, getNotes, setNotes } from './state';
 import { fetchNotes, deleteNote } from './notesApi';
+import { serializeMapForUpload, markUploaded } from './mapBytes';
 
 function checkIcon(run: CheckRun): { symbol: string; color: string } {
     if (run.status !== 'completed') return { symbol: '●', color: '#f9e2af' };
@@ -87,18 +88,17 @@ interface OpenPRViewProps {
     checks: CheckRun[];
     reviews: Review[];
     requiredApprovals: number | null;
-    savedBytes: Uint8Array | null;
+    mapLoaded: boolean;
     hasLock: boolean;
     busy: boolean;
     prMessage: string;
     onPrMessageChange: (v: string) => void;
     onFetchBranch: () => void;
-    onSave: () => void;
     onUpdate: () => void;
     onRelease: () => void;
 }
 
-function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes, hasLock, busy, prMessage, onPrMessageChange, onFetchBranch, onSave, onUpdate, onRelease }: OpenPRViewProps) {
+function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, mapLoaded, hasLock, busy, prMessage, onPrMessageChange, onFetchBranch, onUpdate, onRelease }: OpenPRViewProps) {
     const { t } = useTranslation('arkadia');
     return (
         <div>
@@ -122,12 +122,6 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
             </div>
             {isMyPR && (
                 <div style={{ borderTop: '1px solid #313244', paddingTop: 14 }}>
-                    <p className="hint" style={{ color: savedBytes ? '#a6e3a1' : undefined, marginBottom: 8 }}>
-                        {savedBytes ? t('sync.stagedReady') : t('sync.stageToUpdate')}
-                    </p>
-                    <button type="button" disabled={busy} onClick={onSave} style={{ marginBottom: 8 }}>
-                        {t('sync.saveMap')}
-                    </button>
                     <div className="field" style={{ marginBottom: 8 }}>
                         <textarea
                             placeholder={t('sync.prDescriptionPlaceholder')}
@@ -138,7 +132,7 @@ function OpenPRView({ pr, isMyPR, checks, reviews, requiredApprovals, savedBytes
                         />
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                        <button type="button" disabled={busy || !savedBytes} onClick={onUpdate}>
+                        <button type="button" disabled={busy || !mapLoaded} onClick={onUpdate}>
                             {t('sync.updatePR')}
                         </button>
                         {hasLock && (
@@ -179,7 +173,7 @@ export function GitHubPanel() {
     const token = getToken();
     const mapVersion = getMapVersion();
     const hasLock = getHasLock();
-    const savedBytes = getSavedBytes();
+    const mapLoaded = useEditorState((s) => s.map != null);
     const lockOwner = getLockOwner();
     const versionMatch = mapVersion != null && latestRelease != null && mapVersion === latestRelease;
     const isMyPR = user != null && existingPR != null && existingPR.user.login === user.login;
@@ -212,13 +206,6 @@ export function GitHubPanel() {
         getPRChecks(token, existingPR.head.sha).then(setChecks);
         getPRReviews(token, existingPR.number).then(setReviews);
     }, [token, existingPR?.number, existingPR?.head.sha]);
-
-    const handleSave = async () => {
-        const bytes = await getMapBytes();
-        if (!bytes) { setStatus(t('sync.noMapLoaded')); return; }
-        setSavedBytes(bytes);
-        setStatus(t('sync.mapStaged'));
-    };
 
     const refreshLockStatus = () =>
         getLockStatus().then(s => setLockOwner(s.locked ? { user: s.user, expiresAt: s.expiresAt } : null));
@@ -259,10 +246,15 @@ export function GitHubPanel() {
     };
 
     const handleUpload = async () => {
-        if (!token || !savedBytes) return;
+        if (!token) return;
         setBusy(true);
-        setStatus(t('sync.checkingPRs'));
         try {
+            // Serialize first: a missing map should not leave a branch behind.
+            setStatus(t('sync.preparingMap'));
+            const bytes = await serializeMapForUpload();
+            if (!bytes) { setStatus(t('sync.noMapLoaded')); return; }
+
+            setStatus(t('sync.checkingPRs'));
             const prs = await getOpenPRs(token);
             if (prs.length > 0) {
                 setExistingPR(prs[0]);
@@ -281,11 +273,12 @@ export function GitHubPanel() {
 
             setStatus(t('sync.uploadingMap'));
             const fileSha = await getFileSha(token, masterSha);
-            await uploadFile(token, uint8ToBase64(savedBytes), fileSha);
+            await uploadFile(token, uint8ToBase64(bytes), fileSha);
 
             setStatus(t('sync.creatingPR'));
             const pr = await createPR(token, prMessage || 'Map update', prMessage);
             setExistingPR(pr);
+            markUploaded();
             setStatus(t('sync.prCreated'));
 
             await releaseLock(token);
@@ -306,18 +299,23 @@ export function GitHubPanel() {
     };
 
     const handleUpdate = async () => {
-        if (!token || !savedBytes || !existingPR) return;
+        if (!token || !existingPR) return;
         setBusy(true);
-        setStatus(t('sync.uploadingMap'));
         try {
+            setStatus(t('sync.preparingMap'));
+            const bytes = await serializeMapForUpload();
+            if (!bytes) { setStatus(t('sync.noMapLoaded')); return; }
+
+            setStatus(t('sync.uploadingMap'));
             const fileSha = await getFileSha(token, BRANCH);
-            await uploadFile(token, uint8ToBase64(savedBytes), fileSha, prMessage || 'update map');
+            await uploadFile(token, uint8ToBase64(bytes), fileSha, prMessage || 'update map');
 
             if (prMessage) {
                 setStatus(t('sync.updatingPR'));
                 await updatePR(token, existingPR.number, existingPR.title, prMessage);
             }
 
+            markUploaded();
             setStatus(t('sync.prUpdated'));
             setPrMessage('');
             if (token) getOpenPRs(token).then(prs => setExistingPR(prs[0] ?? null));
@@ -407,7 +405,7 @@ export function GitHubPanel() {
                     checks={checks}
                     reviews={reviews}
                     requiredApprovals={requiredApprovals}
-                    savedBytes={savedBytes}
+                    mapLoaded={mapLoaded}
                     hasLock={hasLock}
                     busy={busy}
                     prMessage={prMessage}
@@ -424,7 +422,6 @@ export function GitHubPanel() {
                             setBusy(false);
                         }
                     }}
-                    onSave={handleSave}
                     onUpdate={handleUpdate}
                     onRelease={handleRelease}
                 />
@@ -459,11 +456,8 @@ export function GitHubPanel() {
                         ) : null;
                     })()}
                     <p className="hint" style={{ color: '#ffd080', marginBottom: 8 }}>
-                        {t('sync.lockActive')}{savedBytes ? ` ${t('sync.stagedReadyUpload')}` : ` ${t('sync.stageToUpload')}`}
+                        {t('sync.lockActive')}
                     </p>
-                    <button type="button" disabled={busy} onClick={handleSave} style={{ marginBottom: 8 }}>
-                        {t('sync.saveMap')}
-                    </button>
                     <div className="field" style={{ marginBottom: 4 }}>
                         <textarea
                             placeholder={t('sync.prDescriptionOnlyPlaceholder')}
@@ -473,7 +467,7 @@ export function GitHubPanel() {
                             style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
                         />
                     </div>
-                    <button type="button" disabled={busy || !savedBytes} onClick={handleUpload} style={{ marginBottom: 4 }}>
+                    <button type="button" disabled={busy || !mapLoaded} onClick={handleUpload} style={{ marginBottom: 4 }}>
                         {t('sync.uploadCreatePR')}
                     </button>
                     <button type="button" disabled={busy} onClick={handleRelease}>

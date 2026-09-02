@@ -43,7 +43,7 @@ Plugins live under `src/plugins/*/index.{ts,tsx}` and are discovered at runtime 
 
 - `onAppReady()` — app init
 - `onMapOpened(map)` / `onMapClosed()` — map load/unload
-- `onMapSave(bytes)` — intercept save to stage bytes for upload
+- `toolbarActions(actions)` — reshape the toolbar's file-action buttons (used to repoint the save button)
 - `swatchSets()` — return terrain/POI palette arrays
 - `sidebarTabs()` — return sidebar tab descriptors (`{ id, label, render }`)
 - `renderOverlay()` — return a React element rendered above the canvas (used for OAuth callback)
@@ -60,7 +60,9 @@ Combines three concerns:
 
 ### GitHub Sync (`src/plugins/github-sync/`)
 
-Collaborative editing workflow: fetch latest map → acquire timed lock → edit locally → stage save → upload file + open PR → lock auto-releases.
+Collaborative editing workflow: fetch latest map → acquire timed lock → edit locally → upload + open PR → lock auto-releases.
+
+The map is serialized inside the upload, never staged ahead of it, so a PR always carries the map as it stands. The toolbar's save button does not write anything: it names the next step towards submitting the map (log in / take the lock / upload) in a floating prompt and jumps to this tab. Saving to a file, in any registered format, lives on the save split-button's caret menu.
 
 | File | Role |
 |---|---|
@@ -68,7 +70,10 @@ Collaborative editing workflow: fetch latest map → acquire timed lock → edit
 | `auth.ts` | GitHub OAuth via popup window. Popup posts code to `window.opener` via `postMessage`; main window listens, calls `exchangeCode()` which hits `LOCK_API/api/auth/token`. |
 | `lock.ts` | `acquireLock(token, durationMs)` / `releaseLock(token)` — thin wrappers over `LOCK_API/api/lock` and `/api/release`. |
 | `api.ts` | GitHub REST calls: fetch latest map via proxy (`LOCK_API/api/map/latest`), create branch from master SHA, upload base64 file, create PR, check for existing open PRs. |
+| `mapBytes.ts` | `serializeMapForUpload()` pins the Mudlet `.dat` format rather than following the active one — exporting once to cMUD would otherwise push a SQLite database as `map_master3.dat`. `markUploaded()` clears the toolbar's dirty marker once the bytes have left the browser. |
 | `GitHubPanel.tsx` | Single sidebar UI component. Subscribes to state via `subscribe(() => forceUpdate())`. Guards: version must match latest release to lock/upload; must hold lock to upload; prevents duplicate PRs. |
+| `../arkadia/saveFlow.ts` | The toolbar save button's behaviour + the prompt's state. Reads login/lock at click time, never in `toolbarActions`: the toolbar re-renders off editor state and would otherwise still say "no lock" after one was taken. |
+| `../arkadia/SaveToast.tsx` | The prompt itself, rendered by `renderOverlay`. Mirrors the editor's `.incoming-banner` chrome and measures `.side-panel` to sit beside it at any panel width. |
 
 ### Game-Client Bridge (`src/bridge/`, `src/client-plugin/`, `src/plugins/arkadia/clientBridge.ts`)
 

@@ -14,7 +14,6 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 
 let _token: string | null = localStorage.getItem(TOKEN_KEY);
-let _savedBytes: Uint8Array | null = null;
 let _hasLock = false;
 
 function notify() { listeners.forEach((l) => l()); }
@@ -28,8 +27,6 @@ export function getToken() { return _token; }
 export function setToken(token: string) { _token = token; localStorage.setItem(TOKEN_KEY, token); notify(); }
 export function clearToken() { _token = null; localStorage.removeItem(TOKEN_KEY); notify(); }
 
-export function getSavedBytes() { return _savedBytes; }
-export function setSavedBytes(b: Uint8Array) { _savedBytes = b; notify(); }
 
 export function getHasLock() { return _hasLock; }
 export function setHasLock(v: boolean) { _hasLock = v; notify(); }

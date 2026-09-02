@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getI18n } from 'react-i18next';
 import { subscribe, getNotes, setNotes } from '../github-sync/state';
 import { fetchNotes } from '../github-sync/notesApi';
 import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
@@ -8,12 +9,14 @@ import { NotesTab } from '../github-sync/NotesTab';
 import { ChangesTab, ChangesTabLabel } from '../github-sync/ChangesTab';
 import { RecordingOverlay } from '../github-sync/RecordingOverlay';
 import { exchangeCode, setToken } from '../github-sync/auth';
-import { setSavedBytes, setMapVersion } from '../github-sync/state';
+import { setMapVersion } from '../github-sync/state';
 import { DirBindSection } from './DirBindSection';
 import { TeamFollowSection } from './TeamFollowSection';
 import { GPSSection } from './GPSSection';
 import { BindySection } from './BindySection';
 import { ClientTab, ClientTabLabel } from './ClientTab';
+import { SaveToast } from './SaveToast';
+import { toolbarSave } from './saveFlow';
 import { announce, captureSceneRef, onMapClosed as clientBridgeMapClosed, startClientBridge } from './clientBridge';
 import { checkMap } from './mapChecks';
 import { en as arkadiaEn } from '../../i18n/locales/en';
@@ -159,8 +162,16 @@ const plugin: EditorPlugin = {
     clientBridgeMapClosed();
   },
 
-  onMapSave(bytes) {
-    setSavedBytes(bytes);
+  // The main save button drives the map-submission flow: it names the next step
+  // (log in, take the lock, upload) rather than writing a file. Saving to a
+  // file, in any registered format, stays on the split button's caret menu,
+  // which the toolbar drives separately from this onClick.
+  toolbarActions(actions) {
+    return actions.map((action) =>
+      action.id === 'save'
+        ? { ...action, title: getI18n().t('arkadia:save.buttonTitle'), onClick: toolbarSave }
+        : action,
+    );
   },
 
   swatchSets() {
@@ -181,6 +192,7 @@ const plugin: EditorPlugin = {
       <>
         <OAuthCallback />
         <RecordingOverlay />
+        <SaveToast />
       </>
     );
   },

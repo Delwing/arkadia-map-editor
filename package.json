@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "mudlet-map-binary-reader": "^1.3.0",
-    "mudlet-map-editor": "1.3.3",
+    "mudlet-map-editor": "1.4.0",
     "sql.js": "^1.14.1"
   },
   "devDependencies": {
