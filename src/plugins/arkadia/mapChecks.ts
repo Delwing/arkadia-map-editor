@@ -75,7 +75,7 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
     const gpsRaw = ud?.['gps'];
     if (gpsRaw) {
       try {
-        const entries: { gps_string_lines?: string[] }[] = JSON.parse(gpsRaw);
+        const entries: { gps_string_lines?: string[]; gps_line_modes?: (string | null)[] }[] = JSON.parse(gpsRaw);
         if (Array.isArray(entries)) {
           entries.forEach((entry, idx) => {
             if (!entry.gps_string_lines || entry.gps_string_lines.length === 0) {
@@ -85,7 +85,23 @@ export function checkMap(map: ArkadiaMap): PluginCheckResult[] {
                 detail: i18n.t('checks.gpsEmptyDetail', { ns: 'arkadia', roomId, idx: idx + 1 }),
                 roomId,
               });
+              return;
             }
+            // A pattern that does not compile takes its whole entry out of both clients,
+            // silently — they drop it rather than throw on every line.
+            entry.gps_string_lines.forEach((line, lineIdx) => {
+              if (entry.gps_line_modes?.[lineIdx] !== 'regex') return;
+              try {
+                new RegExp(line);
+              } catch {
+                results.push({
+                  id: `gps-regex:${roomId}:${idx}:${lineIdx}`,
+                  message: i18n.t('checks.gpsBadRegexMsg', { ns: 'arkadia', idx: idx + 1, line: lineIdx + 1 }),
+                  detail: i18n.t('checks.gpsBadRegexDetail', { ns: 'arkadia', roomId, idx: idx + 1, line: lineIdx + 1 }),
+                  roomId,
+                });
+              }
+            });
           });
         }
       } catch {

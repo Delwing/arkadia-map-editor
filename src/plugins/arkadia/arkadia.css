@@ -150,6 +150,36 @@
   border-color: rgba(143, 184, 255, 0.35);
 }
 
+.gps-trigger-line-input.is-regex {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  border-color: rgba(255, 196, 128, 0.3);
+}
+
+.gps-trigger-line-mode {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 1px solid rgba(143, 184, 255, 0.12);
+  border-radius: 4px;
+  color: #3a4a5a;
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 4px;
+  flex-shrink: 0;
+  transition: color 0.1s, border-color 0.1s;
+}
+
+.gps-trigger-line-mode:hover {
+  color: #c0cfe6;
+}
+
+.gps-trigger-line-mode.is-on {
+  color: #ffc480;
+  border-color: rgba(255, 196, 128, 0.35);
+}
+
 .gps-trigger-line-remove {
   appearance: none;
   -webkit-appearance: none;

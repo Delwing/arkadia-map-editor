@@ -8,9 +8,10 @@ import './arkadia.css';
 const GPS_KEY = 'gps';
 
 interface GpsEntry {
-  room_id: number;
   gps_string_lines: string[];
-  line_delta?: number;
+  // Parallel to gps_string_lines: the slot holding 'regex' makes that line a pattern,
+  // anything else leaves it a literal matched as a substring of the game line.
+  gps_line_modes?: (string | null)[];
   area_name?: string;
   within_room_ids?: number[];
   _uid?: string; // UI-only stable key, stripped before saving
@@ -25,19 +26,20 @@ function parseGps(data: Record<string, string> | undefined): GpsEntry[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((e: GpsEntry) => ({
-      ...e,
-      // 0 / negative is meaningless for the Mudlet side — treat it as "auto"
-      line_delta: typeof e.line_delta === 'number' && e.line_delta > 0 ? e.line_delta : undefined,
-      _uid: nextUid(),
-    }));
+    return parsed.map((
+      { room_id: _room, line_delta: _delta, ...e }: GpsEntry & { room_id?: number; line_delta?: number },
+    ) => ({ ...e, _uid: nextUid() }));
   } catch {
     return [];
   }
 }
 
-function blankEntry(roomId: number): GpsEntry {
-  return { room_id: roomId, gps_string_lines: [], _uid: nextUid() };
+// Two keys older entries carry are dropped rather than round-tripped, because nothing
+// reads them back: room_id (an entry belongs to the room it is saved in, and both
+// clients sync to that room) and line_delta (the lines of a sequence have to be
+// consecutive in both clients, whatever it says). They go the next time a room is saved.
+function blankEntry(): GpsEntry {
+  return { gps_string_lines: [], _uid: nextUid() };
 }
 
 function resizeTriggerTextarea(el: HTMLTextAreaElement) {
@@ -47,30 +49,56 @@ function resizeTriggerTextarea(el: HTMLTextAreaElement) {
 
 function TriggerLinesList({
   lines,
+  modes,
   onChange,
   onCommit,
 }: {
   lines: string[];
-  onChange: (lines: string[]) => void;
-  onCommit?: (lines: string[]) => void;
+  modes: (string | null)[];
+  onChange: (lines: string[], modes: (string | null)[]) => void;
+  onCommit?: (lines: string[], modes: (string | null)[]) => void;
 }) {
   const { t } = useTranslation('arkadia');
+
+  const modeOf = (i: number) => modes[i] ?? null;
+
+  // A line and its mode travel together — dropping the blank lines on commit has to
+  // drop their modes too, or every later line would take the wrong one.
+  const clean = (nextLines: string[], nextModes: (string | null)[]) => {
+    const keptLines: string[] = [];
+    const keptModes: (string | null)[] = [];
+    nextLines.forEach((line, i) => {
+      if (line.length === 0) return;
+      keptLines.push(line);
+      keptModes.push(nextModes[i] ?? null);
+    });
+    return [keptLines, keptModes] as const;
+  };
 
   const update = (i: number, val: string) => {
     const next = [...lines];
     next[i] = val;
-    onChange(next);
+    onChange(next, modes);
   };
 
-  const commit = () => onCommit?.(lines.filter((l) => l.length > 0));
+  const toggleMode = (i: number) => {
+    const next = [...modes];
+    while (next.length < lines.length) next.push(null);
+    next[i] = modeOf(i) === 'regex' ? null : 'regex';
+    onChange(lines, next);
+    onCommit?.(...clean(lines, next));
+  };
+
+  const commit = () => onCommit?.(...clean(lines, modes));
 
   const remove = (i: number) => {
-    const next = lines.filter((_, j) => j !== i);
-    onChange(next);
-    onCommit?.(next.filter((l) => l.length > 0));
+    const nextLines = lines.filter((_, j) => j !== i);
+    const nextModes = modes.filter((_, j) => j !== i);
+    onChange(nextLines, nextModes);
+    onCommit?.(...clean(nextLines, nextModes));
   };
 
-  const add = () => onChange([...lines, '']);
+  const add = () => onChange([...lines, ''], [...modes, null]);
 
   return (
     <div className="gps-trigger-lines">
@@ -78,9 +106,9 @@ function TriggerLinesList({
         <div key={i} className="gps-trigger-line-row">
           <span className="gps-trigger-line-num">{i + 1}</span>
           <textarea
-            className="gps-trigger-line-input"
+            className={modeOf(i) === 'regex' ? 'gps-trigger-line-input is-regex' : 'gps-trigger-line-input'}
             value={line}
-            placeholder={t('gps.triggerPattern')}
+            placeholder={modeOf(i) === 'regex' ? t('gps.regexPattern') : t('gps.triggerPattern')}
             rows={1}
             ref={(el) => { if (el) resizeTriggerTextarea(el); }}
             onChange={(e) => { update(i, e.target.value); resizeTriggerTextarea(e.currentTarget); }}
@@ -97,6 +125,12 @@ function TriggerLinesList({
               requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + text.length; });
             }}
           />
+          <button
+            type="button"
+            className={modeOf(i) === 'regex' ? 'gps-trigger-line-mode is-on' : 'gps-trigger-line-mode'}
+            onClick={() => toggleMode(i)}
+            title={modeOf(i) === 'regex' ? t('gps.regexOnTitle') : t('gps.regexOffTitle')}
+          >.*</button>
           <button
             type="button"
             className="gps-trigger-line-remove"
@@ -119,6 +153,7 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
 }) {
   const { t } = useTranslation('arkadia');
   const [localLines, setLocalLines] = useState(entry.gps_string_lines);
+  const [localModes, setLocalModes] = useState<(string | null)[]>(entry.gps_line_modes ?? []);
   const cleanCount = localLines.filter((l) => l.length > 0).length;
 
   return (
@@ -145,26 +180,12 @@ function GpsEntryRow({ entry, idx, areaNames, onUpdate, onRemove }: {
         </label>
         <TriggerLinesList
           lines={localLines}
-          onChange={setLocalLines}
-          onCommit={(lines) => onUpdate({ gps_string_lines: lines })}
-        />
-      </div>
-      <div className="gps-field">
-        <label className="gps-field-label" title={t('gps.lineDeltaTitle')}>{t('gps.lineDelta')}</label>
-        <input
-          type="number"
-          className="gps-small-input"
-          min={cleanCount}
-          placeholder={t('gps.lineDeltaAuto', { n: cleanCount })}
-          key={`gps-ld-${idx}-${entry.line_delta ?? ''}`}
-          defaultValue={entry.line_delta ?? ''}
-          onBlur={(e) => {
-            const raw = e.target.value.trim();
-            const v = raw === '' ? undefined : parseInt(raw, 10);
-            if (v !== undefined && isNaN(v)) return;
-            if (v !== entry.line_delta) onUpdate({ line_delta: v });
-          }}
-          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          modes={localModes}
+          onChange={(lines, modes) => { setLocalLines(lines); setLocalModes(modes); }}
+          onCommit={(lines, modes) => onUpdate({
+            gps_string_lines: lines,
+            gps_line_modes: modes.some((m) => m === 'regex') ? modes : undefined,
+          })}
         />
       </div>
       <div className="gps-field">
@@ -189,11 +210,12 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
   draft: GpsEntry;
   areaNames: string[];
   onChange: (patch: Partial<GpsEntry>) => void;
-  onConfirm: (lines: string[]) => void;
+  onConfirm: (lines: string[], modes: (string | null)[]) => void;
   onCancel: () => void;
 }) {
   const { t } = useTranslation('arkadia');
   const [localLines, setLocalLines] = useState<string[]>(draft.gps_string_lines);
+  const [localModes, setLocalModes] = useState<(string | null)[]>(draft.gps_line_modes ?? []);
   const cleanCount = localLines.filter((l) => l.length > 0).length;
 
   return (
@@ -219,23 +241,8 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
         </label>
         <TriggerLinesList
           lines={localLines}
-          onChange={setLocalLines}
-        />
-      </div>
-      <div className="gps-field">
-        <label className="gps-field-label" title={t('gps.lineDeltaTitle')}>{t('gps.lineDelta')}</label>
-        <input
-          type="number"
-          className="gps-small-input"
-          min={cleanCount}
-          placeholder={t('gps.lineDeltaAuto', { n: cleanCount })}
-          value={draft.line_delta ?? ''}
-          onChange={(e) => {
-            const raw = e.target.value.trim();
-            if (raw === '') { onChange({ line_delta: undefined }); return; }
-            const v = parseInt(raw, 10);
-            if (!isNaN(v)) onChange({ line_delta: v });
-          }}
+          modes={localModes}
+          onChange={(lines, modes) => { setLocalLines(lines); setLocalModes(modes); }}
         />
       </div>
       <div className="gps-field">
@@ -254,7 +261,16 @@ function GpsAddForm({ draft, areaNames, onChange, onConfirm, onCancel }: {
       <div className="gps-add-actions">
         <button
           type="button"
-          onClick={() => { const clean = localLines.filter((l) => l.length > 0); if (clean.length > 0) onConfirm(clean); }}
+          onClick={() => {
+            const keptLines: string[] = [];
+            const keptModes: (string | null)[] = [];
+            localLines.forEach((line, i) => {
+              if (line.length === 0) return;
+              keptLines.push(line);
+              keptModes.push(localModes[i] ?? null);
+            });
+            if (keptLines.length > 0) onConfirm(keptLines, keptModes);
+          }}
           disabled={cleanCount === 0}
         >
           {t('common.add')}
@@ -269,12 +285,12 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
   const { t } = useTranslation('arkadia');
   const [entries, setEntries] = useState(() => parseGps(room.userData));
   const [addOpen, setAddOpen] = useState(false);
-  const [draft, setDraft] = useState(() => blankEntry(roomId));
+  const [draft, setDraft] = useState(() => blankEntry());
 
   useEffect(() => {
     setEntries(parseGps(room.userData));
     setAddOpen(false);
-    setDraft(blankEntry(roomId));
+    setDraft(blankEntry());
   }, [room, roomId]);
 
   const areaNames = Object.values(map.areaNames).sort();
@@ -298,10 +314,14 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
     applyUpdate(entries.filter((_, i) => i !== idx));
   }
 
-  function addEntry(lines: string[]) {
+  function addEntry(lines: string[], modes: (string | null)[]) {
     if (lines.length === 0) return;
-    applyUpdate([...entries, { ...draft, gps_string_lines: lines }]);
-    setDraft(blankEntry(roomId));
+    applyUpdate([...entries, {
+      ...draft,
+      gps_string_lines: lines,
+      gps_line_modes: modes.some((m) => m === 'regex') ? modes : undefined,
+    }]);
+    setDraft(blankEntry());
     setAddOpen(false);
   }
 
@@ -331,7 +351,7 @@ export function GPSSection({ roomId, room, map, sceneRef }: RoomSectionProps) {
             areaNames={areaNames}
             onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
             onConfirm={addEntry}
-            onCancel={() => { setAddOpen(false); setDraft(blankEntry(roomId)); }}
+            onCancel={() => { setAddOpen(false); setDraft(blankEntry()); }}
           />
         )}
         {!addOpen && (
