@@ -29,16 +29,31 @@ export interface MapChange {
     timestamp?: string;
 }
 
+export interface ChangesPage {
+    /** Query window: how many documents to fetch (server caps at 500). */
+    limit?: number;
+    /** How many to skip — the offset of the next page. */
+    skip?: number;
+}
+
+function changesUrl(params: Record<string, string | number | undefined>): string {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (v !== undefined) qs.set(k, String(v));
+    return `${LOCK_API}/api/changes?${qs}`;
+}
+
 /** Fetch the edit history of a single map object, newest first. */
-export async function fetchChanges(entityKey: string): Promise<MapChange[]> {
-    const res = await fetch(`${LOCK_API}/api/changes?entityKey=${encodeURIComponent(entityKey)}`);
+export async function fetchChanges(entityKey: string, page: ChangesPage = {}): Promise<MapChange[]> {
+    const res = await fetch(changesUrl({ entityKey, limit: page.limit, skip: page.skip }));
     if (!res.ok) return [];
     return res.json();
 }
 
-/** Fetch all changes within an area (the area itself plus its rooms/labels). */
-export async function fetchAreaChanges(areaId: number): Promise<MapChange[]> {
-    const res = await fetch(`${LOCK_API}/api/changes?areaId=${areaId}`);
+/** Fetch changes within an area (the area itself plus its rooms/labels),
+ *  newest first. Paged: the endpoint returns at most `limit` documents, so the
+ *  caller asks for the next window with `skip` once the user wants more. */
+export async function fetchAreaChanges(areaId: number, page: ChangesPage = {}): Promise<MapChange[]> {
+    const res = await fetch(changesUrl({ areaId, limit: page.limit, skip: page.skip }));
     if (!res.ok) return [];
     return res.json();
 }

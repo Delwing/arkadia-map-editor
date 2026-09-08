@@ -89,6 +89,8 @@ export const en = {
     areaMode: 'Whole area',
     areaModeTitle: 'Show changes for the whole current area instead of the selected object',
     loading: 'Loading…',
+    loadMore: 'Load older changes',
+    goTo: 'Select and center on this object',
     empty: '— no recorded changes —',
     type: {
       added: 'added',

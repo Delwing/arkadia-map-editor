@@ -91,6 +91,8 @@ export const plArkadia: ArkadiaLocale = {
     areaMode: 'Cały obszar',
     areaModeTitle: 'Pokaż zmiany całego bieżącego obszaru zamiast zaznaczonego obiektu',
     loading: 'Ładowanie…',
+    loadMore: 'Wczytaj starsze zmiany',
+    goTo: 'Zaznacz i wyśrodkuj na tym obiekcie',
     empty: '— brak zapisanych zmian —',
     type: {
       added: 'dodano',

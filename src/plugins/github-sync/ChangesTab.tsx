@@ -1,7 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useEditorState } from 'mudlet-map-editor';
+import { store, useEditorState, revealRoom, revealPoint, type MudletMap } from 'mudlet-map-editor';
 import { fetchChanges, fetchAreaChanges, type MapChange } from './changesApi';
+
+/** Documents per request. The endpoint caps at 500; this keeps the first paint
+ *  quick and pulls older entries only when the user asks for them. */
+const PAGE_SIZE = 50;
 
 type Target =
     | { kind: 'entity'; entityKey: string; title: string }
@@ -63,6 +67,74 @@ function Avatar({ login, alt }: { login: string; alt: string }) {
     );
 }
 
+/** `room:4071` / `label:12-3` → what the entry points at, or null when the key
+ *  is an area (or anything we can't resolve to a place on the map). */
+function parseEntityKey(entityKey: string): { kind: 'room'; roomId: number } | { kind: 'label'; areaId: number; labelId: number } | null {
+    const room = /^room:(\d+)$/.exec(entityKey);
+    if (room) return { kind: 'room', roomId: Number(room[1]) };
+    const label = /^label:(\d+)-(\d+)$/.exec(entityKey);
+    if (label) return { kind: 'label', areaId: Number(label[1]), labelId: Number(label[2]) };
+    return null;
+}
+
+/**
+ * Select the changed object and bring it into view. Rooms go through the
+ * editor's revealRoom; labels need their position looked up in the map first,
+ * since the change document only carries the key.
+ */
+function goToEntity(entityKey: string): void {
+    const target = parseEntityKey(entityKey);
+    if (!target) return;
+    if (target.kind === 'room') {
+        revealRoom(target.roomId, { selection: { kind: 'room', ids: [target.roomId] } });
+        return;
+    }
+    const label = findLabel(store.getState().map, target.areaId, target.labelId);
+    if (!label) return;
+    // `pos` is raw Mudlet space (+Y north); revealPoint wants render space.
+    revealPoint(
+        { areaId: target.areaId, z: label.pos[2], mapX: label.pos[0], mapY: -label.pos[1] },
+        { selection: { kind: 'label', id: target.labelId, areaId: target.areaId } },
+    );
+}
+
+function findLabel(map: MudletMap | null, areaId: number, labelId: number) {
+    return map?.labels?.[areaId]?.find((l) => l.id === labelId) ?? null;
+}
+
+/** The entity key of an area-history entry, clickable when it names a room or
+ *  label that still exists on the map. */
+function EntityKeyLink({ entityKey, title }: { entityKey: string; title: string }) {
+    const style = { fontSize: '0.75em', color: '#a6adc8' } as const;
+    const target = parseEntityKey(entityKey);
+    const exists = useEditorState((s) => {
+        if (!target) return false;
+        return target.kind === 'room'
+            ? s.map?.rooms?.[target.roomId] != null
+            : findLabel(s.map, target.areaId, target.labelId) != null;
+    });
+    if (!exists) return <span style={style}>{entityKey}</span>;
+    return (
+        <button
+            type="button"
+            title={title}
+            onClick={() => goToEntity(entityKey)}
+            style={{
+                ...style,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontFamily: 'inherit',
+                color: '#8fb8ff',
+                cursor: 'pointer',
+                textDecoration: 'underline dotted',
+            }}
+        >
+            {entityKey}
+        </button>
+    );
+}
+
 export function ChangesTabLabel() {
     const { t } = useTranslation('arkadia');
     return <>{t('changes.tab')}</>;
@@ -75,6 +147,9 @@ export function ChangesTab() {
     const currentAreaId = useEditorState((s) => s.currentAreaId);
     const [changes, setChanges] = useState<MapChange[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    /** False once a request comes back short of PAGE_SIZE — that was the tail. */
+    const [hasMore, setHasMore] = useState(false);
     const [error, setError] = useState('');
     const [areaMode, setAreaMode] = useState(false);
 
@@ -99,20 +174,45 @@ export function ChangesTab() {
         effective.kind === 'entity' ? `e:${effective.entityKey}` :
         effective.kind === 'area' ? `a:${effective.areaId}` : '';
 
+    // Tracks the live query so an in-flight page can tell it has gone stale.
+    const queryKeyRef = useRef(queryKey);
+    queryKeyRef.current = queryKey;
+
+    /** One page of the current query. `skip` is the offset of the next window. */
+    function fetchPage(skip: number): Promise<MapChange[]> {
+        return effective.kind === 'entity'
+            ? fetchChanges(effective.entityKey, { limit: PAGE_SIZE, skip })
+            : fetchAreaChanges((effective as { areaId: number }).areaId, { limit: PAGE_SIZE, skip });
+    }
+
     useEffect(() => {
-        if (!queryKey) { setChanges([]); setError(''); return; }
+        if (!queryKey) { setChanges([]); setError(''); setHasMore(false); return; }
         let cancelled = false;
         setLoading(true);
         setError('');
-        const p = effective.kind === 'entity'
-            ? fetchChanges(effective.entityKey)
-            : fetchAreaChanges((effective as { areaId: number }).areaId);
-        p.then((data) => { if (!cancelled) setChanges(data); })
+        fetchPage(0)
+            .then((data) => { if (!cancelled) { setChanges(data); setHasMore(data.length === PAGE_SIZE); } })
             .catch((e) => { if (!cancelled) setError(String(e)); })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey]);
+
+    function loadMore() {
+        if (loadingMore) return;
+        setLoadingMore(true);
+        const skip = changes.length;
+        const key = queryKey;
+        fetchPage(skip)
+            .then((data) => {
+                // Drop the page if the user selected something else meanwhile.
+                if (queryKeyRef.current !== key) return;
+                setChanges((prev) => (skip === prev.length ? [...prev, ...data] : prev));
+                setHasMore(data.length === PAGE_SIZE);
+            })
+            .catch((e) => { if (queryKeyRef.current === key) setError(String(e)); })
+            .finally(() => setLoadingMore(false));
+    }
 
     const dateLocale = i18n.language === 'pl' ? 'pl-PL' : undefined;
 
@@ -159,7 +259,7 @@ export function ChangesTab() {
                                     {t(`changes.type.${c.changeType}`)}
                                 </span>
                                 {areaMode && (
-                                    <span style={{ fontSize: '0.75em', color: '#a6adc8' }}>{c.entityKey}</span>
+                                    <EntityKeyLink entityKey={c.entityKey} title={t('changes.goTo')} />
                                 )}
                                 <span style={{ marginLeft: 'auto', fontSize: '0.75em', color: '#6c7086' }}>{c.version}</span>
                             </div>
@@ -192,6 +292,17 @@ export function ChangesTab() {
                     );
                 })}
             </div>
+
+            {!loading && !error && hasMore && (
+                <button
+                    type="button"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    style={{ width: '100%', marginTop: 10, fontSize: '0.8em', padding: '4px 8px' }}
+                >
+                    {loadingMore ? t('changes.loading') : t('changes.loadMore')}
+                </button>
+            )}
         </>
     );
 }

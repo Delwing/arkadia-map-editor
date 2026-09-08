@@ -182,7 +182,15 @@ const plugin: EditorPlugin = {
     return [
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
       { id: 'notes', label: <NotesTabLabel />, render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
-      { id: 'changes', label: <ChangesTabLabel />, render: () => <ChangesTab /> },
+      // Selection-aware: the tab shows the history *of* the selection, so
+      // clicking around the map must not bounce the user to the Selection tab.
+      {
+        id: 'changes',
+        label: <ChangesTabLabel />,
+        render: () => <ChangesTab />,
+        selectionAware: true,
+        multiSelectionAware: true,
+      },
       { id: 'client', label: <ClientTabLabel />, render: (sceneRef) => <ClientTab sceneRef={sceneRef} /> },
     ];
   },
