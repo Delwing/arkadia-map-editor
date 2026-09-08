@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { store, useEditorState, pushCommand } from 'mudlet-map-editor';
+import { store, useEditorState, pushCommand, revealRoom } from 'mudlet-map-editor';
 import {
     subscribe, getToken, getNotes, setNotes,
     isRecording, getRecordStartIdx, startRecording, stopRecording,
@@ -44,27 +44,7 @@ function summarizeCmd(cmd: AnyCommand): string {
 }
 
 function navigateToRoom(roomId: number) {
-    const s = store.getState();
-    const room = s.map?.rooms[roomId];
-    if (!room) return;
-    const areaChanged = room.area !== s.currentAreaId;
-    const zChanged = room.z !== s.currentZ;
-    if (areaChanged || zChanged) {
-        store.setState({
-            selection: { kind: 'room', ids: [roomId] },
-            sidebarTab: 'notes',
-            currentAreaId: room.area,
-            currentZ: room.z,
-            navigateTo: { mapX: room.x, mapY: -room.y },
-        });
-        store.bumpStructure();
-    } else {
-        store.setState({
-            selection: { kind: 'room', ids: [roomId] },
-            sidebarTab: 'notes',
-            panRequest: { mapX: room.x, mapY: -room.y },
-        });
-    }
+    revealRoom(roomId, { selection: { kind: 'room', ids: [roomId] } });
 }
 
 function applyNoteCommands(note: Note, sceneRef: { current: any }) {

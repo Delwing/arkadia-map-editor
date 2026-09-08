@@ -7,7 +7,7 @@
  * `github-sync/state.ts`; components subscribe and force a re-render.
  */
 
-import { pushCommand, store } from 'mudlet-map-editor';
+import { pushCommand, revealRoom, store } from 'mudlet-map-editor';
 import type { RoomSectionProps } from 'mudlet-map-editor';
 import { createBridge, type Bridge, type BridgeMessage, type ClientPosition } from '../../bridge/protocol';
 import { buildAreas, buildWholeMap, collectAffectedAreas, resetAreaSyncCache } from './areaSync';
@@ -332,24 +332,5 @@ function followTo(position: ClientPosition) {
  * would otherwise clobber whatever the user has selected on every step.
  */
 export function navigateToRoom(roomId: number, select: boolean) {
-  const s = store.getState();
-  const room = s.map?.rooms[roomId];
-  if (!room) return;
-
-  const selection = select ? { selection: { kind: 'room' as const, ids: [roomId] } } : {};
-
-  if (room.area !== s.currentAreaId || room.z !== s.currentZ) {
-    store.setState({
-      ...selection,
-      currentAreaId: room.area,
-      currentZ: room.z,
-      navigateTo: { mapX: room.x, mapY: -room.y },
-    });
-    store.bumpStructure();
-  } else {
-    store.setState({
-      ...selection,
-      panRequest: { mapX: room.x, mapY: -room.y },
-    });
-  }
+  revealRoom(roomId, select ? { selection: { kind: 'room', ids: [roomId] } } : {});
 }

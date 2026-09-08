@@ -181,7 +181,16 @@ const plugin: EditorPlugin = {
   sidebarTabs() {
     return [
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
-      { id: 'notes', label: <NotesTabLabel />, render: (sceneRef) => <NotesTab sceneRef={sceneRef} /> },
+      // Selection-aware: jumping to a note's room selects it, and the panel's
+      // "use selected room" field reads the selection, so the tab has to survive
+      // a selection change (it used to pin `sidebarTab` on every jump instead).
+      {
+        id: 'notes',
+        label: <NotesTabLabel />,
+        render: (sceneRef) => <NotesTab sceneRef={sceneRef} />,
+        selectionAware: true,
+        multiSelectionAware: true,
+      },
       // Selection-aware: the tab shows the history *of* the selection, so
       // clicking around the map must not bounce the user to the Selection tab.
       {
