@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getI18n } from 'react-i18next';
 import { subscribe, getNotes, setNotes } from '../github-sync/state';
 import { fetchNotes } from '../github-sync/notesApi';
+import { startLockSync } from '../github-sync/lockSync';
 import type { EditorPlugin, LabelPreset, SwatchSet } from 'mudlet-map-editor';
 import { addTranslations, store } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
@@ -172,6 +173,9 @@ const plugin: EditorPlugin = {
 
   async onAppReady() {
     fetchNotes().then(setNotes);
+    // Read back who we are and whether the lock is ours. The lock lives on the
+    // server, so a reload has to ask for it rather than assume it was lost.
+    startLockSync();
     startClientBridge();
   },
 

@@ -69,7 +69,8 @@ The map is serialized inside the upload, never staged ahead of it, so a PR alway
 |---|---|
 | `state.ts` | Module-level singleton with pub/sub. Token persisted to `localStorage`. Call `subscribe(fn)` → returns unsubscribe. Notifies all listeners synchronously on any mutation. |
 | `auth.ts` | GitHub OAuth via popup window. Popup posts code to `window.opener` via `postMessage`; main window listens, calls `exchangeCode()` which hits `LOCK_API/api/auth/token`. |
-| `lock.ts` | `acquireLock(token, durationMs)` / `releaseLock(token)` — thin wrappers over `LOCK_API/api/lock` and `/api/release`. |
+| `lock.ts` | `getLockStatus()` / `acquireLock(token, durationMs)` / `releaseLock(token)` — thin wrappers over `LOCK_API/api/lock` and `/api/release`. |
+| `lockSync.ts` | Derives `hasLock` — the lock is ours when its owner matches the logged-in login. Started from `onAppReady`, re-read on login, after every lock action, at the lock's expiry and on a 60s poll while the tab is visible. Nothing else may write `hasLock`: it is server state, so a reload has to ask for it rather than assume the lock was lost. |
 | `api.ts` | GitHub REST calls: fetch latest map via proxy (`LOCK_API/api/map/latest`), create branch from master SHA, upload base64 file, create PR, check for existing open PRs. |
 | `mapBytes.ts` | `serializeMapForUpload()` pins the Mudlet `.dat` format rather than following the active one — exporting once to cMUD would otherwise push a SQLite database as `map_master3.dat`. `markUploaded()` clears the toolbar's dirty marker once the bytes have left the browser. |
 | `GitHubPanel.tsx` | Single sidebar UI component. Subscribes to state via `subscribe(() => forceUpdate())`. Guards: version must match latest release to lock/upload; must hold lock to upload; prevents duplicate PRs. |

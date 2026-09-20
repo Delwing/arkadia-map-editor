@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { loadUrlIntoStore, useEditorState } from 'mudlet-map-editor';
 import { clearToken, startOAuth } from './auth';
-import { getUser, getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, getProxiedBranchMapUrl, getPRChecks, getPRReviews, getRequiredApprovals, BRANCH, OpenPR, CheckRun, Review } from './api';
-import { acquireLock, releaseLock, getLockStatus } from './lock';
+import { getOpenPRs, getMasterSha, createBranch, getFileSha, uploadFile, createPR, updatePR, uint8ToBase64, getLatestRelease, getProxiedMapUrl, getProxiedBranchMapUrl, getPRChecks, getPRReviews, getRequiredApprovals, BRANCH, OpenPR, CheckRun, Review } from './api';
+import { acquireLock, releaseLock } from './lock';
+import { refreshLock, refreshUser } from './lockSync';
 import { store } from 'mudlet-map-editor';
-import { subscribe, getToken, getHasLock, setHasLock, getMapVersion, getLockOwner, setLockOwner, getNotes, setNotes } from './state';
+import { subscribe, getToken, getHasLock, getCurrentUser, getMapVersion, getLockOwner, getNotes, setNotes } from './state';
 import { fetchNotes, deleteNote } from './notesApi';
 import { serializeMapForUpload, markUploaded } from './mapBytes';
 
@@ -158,7 +159,6 @@ const LOCK_DURATIONS = [
 export function GitHubPanel() {
     const { t } = useTranslation('arkadia');
     const [, rerender] = useState(0);
-    const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
     const [latestRelease, setLatestRelease] = useState<string | null>(null);
     const [existingPR, setExistingPR] = useState<OpenPR | null>(null);
     const [checks, setChecks] = useState<CheckRun[]>([]);
@@ -175,20 +175,17 @@ export function GitHubPanel() {
     const hasLock = getHasLock();
     const mapLoaded = useEditorState((s) => s.map != null);
     const lockOwner = getLockOwner();
+    const user = getCurrentUser();
     const versionMatch = mapVersion != null && latestRelease != null && mapVersion === latestRelease;
     const isMyPR = user != null && existingPR != null && existingPR.user.login === user.login;
 
-    useEffect(() => {
-        if (!token) { setUser(null); return; }
-        getUser(token).then(setUser).catch(() => clearToken());
-    }, [token]);
+    // Who we are and whether the lock is ours both come from `lockSync`, which
+    // runs from app start — the panel only asks it to catch up on a fresh
+    // token, so logging in reflects here without waiting for the next poll.
+    useEffect(() => { void refreshUser(); }, [token]);
 
     useEffect(() => {
         getLatestRelease().then(setLatestRelease);
-    }, []);
-
-    useEffect(() => {
-        getLockStatus().then(s => setLockOwner(s.locked ? { user: s.user, expiresAt: s.expiresAt } : null));
     }, []);
 
     useEffect(() => {
@@ -207,9 +204,6 @@ export function GitHubPanel() {
         getPRReviews(token, existingPR.number).then(setReviews);
     }, [token, existingPR?.number, existingPR?.head.sha]);
 
-    const refreshLockStatus = () =>
-        getLockStatus().then(s => setLockOwner(s.locked ? { user: s.user, expiresAt: s.expiresAt } : null));
-
     const handleLock = async (duration: number) => {
         if (!token) return;
         setBusy(true);
@@ -217,14 +211,13 @@ export function GitHubPanel() {
         try {
             const res = await acquireLock(token, duration);
             setStatus(res.message);
-            if (res.result) {
-                setHasLock(true);
-                fetchNotes().then(setNotes);
-            }
+            if (res.result) fetchNotes().then(setNotes);
         } catch (e) {
             setStatus(String(e));
         } finally {
-            await refreshLockStatus();
+            // `hasLock` follows the server, never the button: re-reading the
+            // lock is what makes it ours, here and after a reload alike.
+            await refreshLock();
             setBusy(false);
         }
     };
@@ -236,11 +229,10 @@ export function GitHubPanel() {
         try {
             const res = await releaseLock(token);
             setStatus(res.message);
-            setHasLock(false);
         } catch (e) {
             setStatus(String(e));
         } finally {
-            await refreshLockStatus();
+            await refreshLock();
             setBusy(false);
         }
     };
@@ -282,7 +274,6 @@ export function GitHubPanel() {
             setStatus(t('sync.prCreated'));
 
             await releaseLock(token);
-            setHasLock(false);
             setPrMessage('');
 
             const appliedNotes = getNotes().filter((n) => n.commandsJson);
@@ -293,7 +284,7 @@ export function GitHubPanel() {
         } catch (e) {
             setStatus(t('sync.error', { error: String(e) }));
         } finally {
-            await refreshLockStatus();
+            await refreshLock();
             setBusy(false);
         }
     };
@@ -355,7 +346,7 @@ export function GitHubPanel() {
                     : <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
                 }
                 <span>{user?.login ?? ''}</span>
-                <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); setHasLock(false); }}>
+                <button type="button" style={{ marginLeft: 'auto' }} onClick={() => { clearToken(); void refreshUser(); }}>
                     {t('sync.logout')}
                 </button>
             </div>
@@ -381,7 +372,7 @@ export function GitHubPanel() {
                         {t('sync.fetch')}
                     </button>
                 </div>
-                {lockOwner && (
+                {lockOwner && !hasLock && (
                     <p className="hint" style={{ color: '#ffd080', marginTop: 4 }}>
                         <Trans
                             i18nKey="sync.lockHeldBy"
@@ -426,13 +417,20 @@ export function GitHubPanel() {
                     onRelease={handleRelease}
                 />
             ) : !hasLock ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {LOCK_DURATIONS.map((opt) => (
-                        <button key={opt.key} type="button" disabled={busy || !versionMatch} onClick={() => handleLock(opt.duration)}>
-                            {t('sync.lockFor', { duration: t(`sync.${opt.key}` as any) })}
-                        </button>
-                    ))}
-                </div>
+                // Someone else's lock is not something to offer buttons against
+                // — the server would turn every one of them down. The banner
+                // above says who holds it and until when.
+                lockOwner ? (
+                    <p className="hint">{t('sync.waitForLock')}</p>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {LOCK_DURATIONS.map((opt) => (
+                            <button key={opt.key} type="button" disabled={busy || !versionMatch} onClick={() => handleLock(opt.duration)}>
+                                {t('sync.lockFor', { duration: t(`sync.${opt.key}` as any) })}
+                            </button>
+                        ))}
+                    </div>
+                )
             ) : (
                 <>
                     {(() => {
@@ -456,7 +454,9 @@ export function GitHubPanel() {
                         ) : null;
                     })()}
                     <p className="hint" style={{ color: '#ffd080', marginBottom: 8 }}>
-                        {t('sync.lockActive')}
+                        {lockOwner
+                            ? t('sync.lockActiveUntil', { time: new Date(lockOwner.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+                            : t('sync.lockActive')}
                     </p>
                     <div className="field" style={{ marginBottom: 4 }}>
                         <textarea

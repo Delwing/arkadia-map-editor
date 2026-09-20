@@ -29,7 +29,22 @@ export function clearToken() { _token = null; localStorage.removeItem(TOKEN_KEY)
 
 
 export function getHasLock() { return _hasLock; }
-export function setHasLock(v: boolean) { _hasLock = v; notify(); }
+export function setHasLock(v: boolean) { if (_hasLock === v) return; _hasLock = v; notify(); }
+
+/**
+ * The logged-in GitHub user. It lives here rather than in the panel because
+ * lock ownership is decided by matching this login against the lock's owner,
+ * and that has to work outside React too — `lockSync` derives `hasLock` from
+ * it whether or not the sidebar tab is mounted.
+ */
+export interface GitHubUser { login: string; avatar_url: string; }
+let _user: GitHubUser | null = null;
+export function getCurrentUser() { return _user; }
+export function setCurrentUser(v: GitHubUser | null) {
+    if (_user?.login === v?.login) return;
+    _user = v;
+    notify();
+}
 
 let _mapVersion: string | null = null;
 export function getMapVersion() { return _mapVersion; }
@@ -38,7 +53,11 @@ export function setMapVersion(v: string | null) { _mapVersion = v; notify(); }
 export interface LockOwner { user: string; expiresAt: number; }
 let _lockOwner: LockOwner | null = null;
 export function getLockOwner() { return _lockOwner; }
-export function setLockOwner(v: LockOwner | null) { _lockOwner = v; notify(); }
+export function setLockOwner(v: LockOwner | null) {
+    if (_lockOwner?.user === v?.user && _lockOwner?.expiresAt === v?.expiresAt) return;
+    _lockOwner = v;
+    notify();
+}
 
 let _notes: Note[] = [];
 export function getNotes() { return _notes; }

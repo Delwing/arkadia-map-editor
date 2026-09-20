@@ -133,6 +133,8 @@ export const plArkadia: ArkadiaLocale = {
     lockDuration4h: '4 godziny',
     lockDuration8h: '8 godzin',
     lockActive: 'Blokada aktywna.',
+    lockActiveUntil: 'Twoja blokada jest aktywna do {{time}}.',
+    waitForLock: 'Poczekaj na zwolnienie blokady, aby założyć własną.',
     preparingMap: 'Przygotowywanie mapy…',
     prDescriptionOnlyPlaceholder: 'Opis PR (opcjonalnie)',
     uploadCreatePR: 'Prześlij i utwórz PR',

@@ -130,6 +130,8 @@ export const en = {
     lockDuration4h: '4 hours',
     lockDuration8h: '8 hours',
     lockActive: 'Lock active.',
+    lockActiveUntil: 'Your lock is active until {{time}}.',
+    waitForLock: 'Wait for the lock to be released before you can take one.',
     preparingMap: 'Preparing map…',
     prDescriptionOnlyPlaceholder: 'PR description (optional)',
     uploadCreatePR: 'Upload & create PR',

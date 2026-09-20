@@ -11,9 +11,15 @@ export type LockStatus =
     | { locked: false }
     | { locked: true; user: string; expiresAt: number };
 
+/**
+ * Throws rather than reporting "no lock" when the backend is unreachable or
+ * unhappy: the caller keeps the last known state on a failure, and an outage
+ * must not look like a lock that has been released. The timeout is what keeps
+ * a hung request from stalling the refresh that follows it.
+ */
 export async function getLockStatus(): Promise<LockStatus> {
-    const res = await fetch(`${LOCK_API}/api/lock`);
-    if (!res.ok) return { locked: false };
+    const res = await fetch(`${LOCK_API}/api/lock`, { signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) throw new Error(`lock status ${res.status}`);
     return res.json();
 }
 
