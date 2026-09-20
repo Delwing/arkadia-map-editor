@@ -106,12 +106,41 @@ const WIOSKA: LabelPreset = {
   // Fully transparent — the map shows through, only the text and frame read.
   bgColor: '#00000000',
   outlineColor: null,
-  border: { width: 6, color: '#fed97180' },
-  font: { family: 'Palatino Linotype', size: 80, bold: true },
+  border: { width: 4, color: '#fed97180' },
+  font: { family: 'Palatino Linotype', size: 55, bold: true },
   styleId: 'capsBigInitials',
-  padding: 45,
-  size: [4, 3],
-  fitToText: 'width',
+  // Stated rather than left to the default, so applying this over a label that
+  // came from Statki pulls its alignment back.
+  textAlign: 'center',
+  padding: 35,
+  // Both axes follow the text, so the padding is the margin on all four sides
+  // and a two-line name gets a box tall enough for it. A fixed height only ever
+  // suited one line, and had to be recomputed whenever the font or padding
+  // moved; single-line names still come out the same height as each other.
+  fitToText: true,
+};
+
+/** The village house style a size up, for towns that should read bigger. */
+const MIASTA: LabelPreset = {
+  ...WIOSKA,
+  id: 'ark-miasta',
+  name: 'Miasta',
+  font: { ...WIOSKA.font, size: 80 },
+  padding: 40,
+};
+
+const STATKI: LabelPreset = {
+  id: 'ark-statki',
+  name: 'Statki',
+  fgColor: '#ffff00',
+  bgColor: '#00000000',
+  outlineColor: null,
+  border: null,
+  font: { family: 'Palatino Linotype', size: 55, bold: false },
+  styleId: 'capsBigInitials',
+  textAlign: 'left',
+  padding: 10,
+  fitToText: true,
 };
 
 function NotesTabLabel() {
@@ -207,7 +236,7 @@ const plugin: EditorPlugin = {
   },
 
   labelPresets() {
-    return [WIOSKA];
+    return [MIASTA, WIOSKA, STATKI];
   },
 
   // The map's labels are drawn here, with styles, borders, padding and text

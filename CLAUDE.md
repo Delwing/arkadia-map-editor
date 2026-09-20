@@ -55,7 +55,7 @@ Adding a plugin: create `src/plugins/<name>/index.tsx` with a default `EditorPlu
 
 Combines three concerns:
 
-1. **Swatch sets and label presets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID, plus `WIOSKA`, the house style for map labels (gold Palatino caps, translucent frame, transparent background, fixed 3-unit height with the width following the text).
+1. **Swatch sets and label presets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID, plus the label presets `MIASTA` / `WIOSKA` (gold Palatino caps, translucent frame, transparent background, cities a size up) and `STATKI` (yellow, left-aligned, no frame) — all three size their box to their own text, so multi-line names fit.
 2. **GitHub sync tab** — Delegates to `src/plugins/github-sync/GitHubPanel.tsx` as the sidebar tab and `OAuthCallback` as the overlay.
 3. **Game-client bridge** — `clientBridge.ts` + the "Klient" sidebar tab (`ClientTab.tsx`). See below.
 
