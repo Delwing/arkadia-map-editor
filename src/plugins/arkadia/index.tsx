@@ -210,6 +210,16 @@ const plugin: EditorPlugin = {
     return [WIOSKA];
   },
 
+  // The map's labels are drawn here, with styles, borders, padding and text
+  // alignment Mudlet knows nothing about, so the pixmap has to be what Mudlet
+  // shows rather than its own re-render of the label text. 2x because that
+  // pixmap is then the only copy there is — and a constant, so what lands in a
+  // map shared through GitHub doesn't depend on the display scaling of whoever
+  // edited it.
+  labelPolicy() {
+    return { preservePixmaps: true, supersample: 2 };
+  },
+
   sidebarTabs() {
     return [
       { id: 'github', label: 'Arkadia', render: () => <GitHubPanel /> },
