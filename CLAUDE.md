@@ -45,6 +45,7 @@ Plugins live under `src/plugins/*/index.{ts,tsx}` and are discovered at runtime 
 - `onMapOpened(map)` / `onMapClosed()` — map load/unload
 - `toolbarActions(actions)` — reshape the toolbar's file-action buttons (used to repoint the save button)
 - `swatchSets()` — return terrain/POI palette arrays
+- `labelPresets()` — return label presets (font/colour/border/style bundles)
 - `sidebarTabs()` — return sidebar tab descriptors (`{ id, label, render }`)
 - `renderOverlay()` — return a React element rendered above the canvas (used for OAuth callback)
 
@@ -54,7 +55,7 @@ Adding a plugin: create `src/plugins/<name>/index.tsx` with a default `EditorPlu
 
 Combines three concerns:
 
-1. **Swatch sets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID.
+1. **Swatch sets and label presets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID, plus `WIOSKA`, the house style for map labels (gold Palatino caps, translucent frame, transparent background, fixed 3-unit height with the width following the text).
 2. **GitHub sync tab** — Delegates to `src/plugins/github-sync/GitHubPanel.tsx` as the sidebar tab and `OAuthCallback` as the overlay.
 3. **Game-client bridge** — `clientBridge.ts` + the "Klient" sidebar tab (`ClientTab.tsx`). See below.
 

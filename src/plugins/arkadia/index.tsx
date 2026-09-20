@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { getI18n } from 'react-i18next';
 import { subscribe, getNotes, setNotes } from '../github-sync/state';
 import { fetchNotes } from '../github-sync/notesApi';
-import type { EditorPlugin, SwatchSet } from 'mudlet-map-editor';
+import type { EditorPlugin, LabelPreset, SwatchSet } from 'mudlet-map-editor';
 import { addTranslations, store } from 'mudlet-map-editor';
 import { GitHubPanel } from '../github-sync/GitHubPanel';
 import { NotesTab } from '../github-sync/NotesTab';
@@ -87,6 +87,30 @@ const POI: SwatchSet = {
     { id: 'poi-F',  name: 'Fryzjer',                  symbol: 'F',   environment: 295 },
     { id: 'poi-+',  name: 'Świątynia / kapliczka',    symbol: '+',   environment: 295 },
   ],
+};
+
+/**
+ * Label presets — the house style for map labels, applied in one click from the
+ * label panel and used as the starting point for every new label.
+ *
+ * The box is 3 units tall and as wide as the text needs: 'width' fitting keeps
+ * a row of village names on one baseline height whatever their length. The
+ * padding matches the vertical slack a 80px line leaves in a 192px box, so the
+ * frame sits evenly around the word.
+ */
+const WIOSKA: LabelPreset = {
+  id: 'ark-wioska',
+  name: 'Wioska',
+  fgColor: '#fed971',
+  // Fully transparent — the map shows through, only the text and frame read.
+  bgColor: '#00000000',
+  outlineColor: null,
+  border: { width: 6, color: '#fed97180' },
+  font: { family: 'Palatino Linotype', size: 80, bold: true },
+  styleId: 'capsBigInitials',
+  padding: 45,
+  size: [4, 3],
+  fitToText: 'width',
 };
 
 function NotesTabLabel() {
@@ -176,6 +200,10 @@ const plugin: EditorPlugin = {
 
   swatchSets() {
     return [TERENY, POI];
+  },
+
+  labelPresets() {
+    return [WIOSKA];
   },
 
   sidebarTabs() {
