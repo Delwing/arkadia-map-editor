@@ -112,7 +112,9 @@ const WIOSKA: LabelPreset = {
   // Stated rather than left to the default, so applying this over a label that
   // came from Statki pulls its alignment back.
   textAlign: 'center',
-  padding: 35,
+  // [horizontal, vertical] — caps in a frame read tight at the sides, so the
+  // side margin is twice the one above and below.
+  padding: [70, 35],
   // Both axes follow the text, so the padding is the margin on all four sides
   // and a two-line name gets a box tall enough for it. A fixed height only ever
   // suited one line, and had to be recomputed whenever the font or padding
@@ -126,7 +128,7 @@ const MIASTA: LabelPreset = {
   id: 'ark-miasta',
   name: 'Miasta',
   font: { ...WIOSKA.font, size: 80 },
-  padding: 40,
+  padding: [80, 40],
 };
 
 const STATKI: LabelPreset = {
