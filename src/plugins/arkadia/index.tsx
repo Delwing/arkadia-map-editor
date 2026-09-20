@@ -107,7 +107,7 @@ const WIOSKA: LabelPreset = {
   bgColor: '#00000000',
   outlineColor: null,
   border: { width: 4, color: '#fed97180' },
-  font: { family: 'Palatino Linotype', size: 55, bold: true },
+  font: { family: 'Palatino Linotype', size: 55, bold: true, italic: false, underline: false, strikeout: false },
   styleId: 'capsBigInitials',
   // Stated rather than left to the default, so applying this over a label that
   // came from Statki pulls its alignment back.
@@ -138,11 +138,36 @@ const STATKI: LabelPreset = {
   bgColor: '#00000000',
   outlineColor: null,
   border: null,
-  font: { family: 'Palatino Linotype', size: 55, bold: false },
+  font: { family: 'Palatino Linotype', size: 55, bold: false, italic: false, underline: false, strikeout: false },
   styleId: 'capsBigInitials',
   textAlign: 'left',
   padding: 10,
   fitToText: true,
+};
+
+/**
+ * Area crossing — where an exit out of this area leads. Wayfinding rather than
+ * a place, so it sits on top of the rooms it labels: an edge marker tucked
+ * under a room is no use.
+ *
+ * A plate nailed to the edge: legible over any terrain, and yellow rather than
+ * the desaturated gold the place names use, so it belongs to the map's palette
+ * without being mistaken for one of them. The plate is a warm near-black so the
+ * yellow stays warm; the frame is the text colour at 40%, as on a village.
+ */
+const TABLICZKA: LabelPreset = {
+  id: 'ark-przejscie-tabliczka',
+  name: 'Tabliczka',
+  fgColor: '#ffe45c',
+  bgColor: '#1c1708d9',
+  outlineColor: null,
+  border: { width: 2, color: '#ffe45c66' },
+  font: { family: 'Palatino Linotype', size: 50, bold: true, italic: false, underline: false, strikeout: false },
+  styleId: 'capsBigInitials',
+  textAlign: 'center',
+  padding: [24, 12],
+  fitToText: true,
+  showOnTop: true,
 };
 
 function NotesTabLabel() {
@@ -238,7 +263,7 @@ const plugin: EditorPlugin = {
   },
 
   labelPresets() {
-    return [MIASTA, WIOSKA, STATKI];
+    return [MIASTA, WIOSKA, STATKI, TABLICZKA];
   },
 
   // The map's labels are drawn here, with styles, borders, padding and text
