@@ -107,7 +107,7 @@ const WIOSKA: LabelPreset = {
   bgColor: '#00000000',
   outlineColor: null,
   border: { width: 4, color: '#fed97180' },
-  font: { family: 'Palatino Linotype', size: 55, bold: true, italic: false, underline: false, strikeout: false },
+  font: { family: 'Segoe UI', size: 65, bold: true, italic: false, underline: false, strikeout: false },
   styleId: 'capsBigInitials',
   // Stated rather than left to the default, so applying this over a label that
   // came from Statki pulls its alignment back.
@@ -138,7 +138,7 @@ const STATKI: LabelPreset = {
   bgColor: '#00000000',
   outlineColor: null,
   border: null,
-  font: { family: 'Palatino Linotype', size: 55, bold: false, italic: false, underline: false, strikeout: false },
+  font: { family: 'Segoe UI', size: 60, bold: false, italic: false, underline: false, strikeout: false },
   styleId: 'capsBigInitials',
   textAlign: 'left',
   padding: 10,
@@ -162,7 +162,7 @@ const TABLICZKA: LabelPreset = {
   bgColor: '#1c1708d9',
   outlineColor: null,
   border: { width: 2, color: '#ffe45c66' },
-  font: { family: 'Palatino Linotype', size: 50, bold: true, italic: false, underline: false, strikeout: false },
+  font: { family: 'Segoe UI', size: 60, bold: true, italic: false, underline: false, strikeout: false },
   styleId: 'capsBigInitials',
   textAlign: 'center',
   padding: [24, 12],
