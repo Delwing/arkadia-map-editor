@@ -20,6 +20,7 @@ import { SaveToast } from './SaveToast';
 import { toolbarSave } from './saveFlow';
 import { announce, captureSceneRef, onMapClosed as clientBridgeMapClosed, startClientBridge } from './clientBridge';
 import { checkMap } from './mapChecks';
+import { TABLICZKA_STYLE } from './tabliczka';
 import { en as arkadiaEn } from '../../i18n/locales/en';
 import { plArkadia } from '../../i18n/locales/pl';
 
@@ -131,6 +132,17 @@ const MIASTA: LabelPreset = {
   padding: [80, 40],
 };
 
+/** Hamlets: the village caps and margins, smaller, in teal and without a frame, so they
+ *  read a step below a village rather than as one. Taken from the Łany label. */
+const WIOCHY: LabelPreset = {
+  ...WIOSKA,
+  id: 'ark-wiochy',
+  name: 'Wiochy',
+  fgColor: '#008080',
+  border: null,
+  font: { ...WIOSKA.font, size: 55 },
+};
+
 const STATKI: LabelPreset = {
   id: 'ark-statki',
   name: 'Statki',
@@ -139,7 +151,7 @@ const STATKI: LabelPreset = {
   outlineColor: null,
   border: null,
   font: { family: 'Segoe UI', size: 60, bold: false, italic: false, underline: false, strikeout: false },
-  styleId: 'capsBigInitials',
+  styleId: 'plain',
   textAlign: 'left',
   padding: 10,
   fitToText: true,
@@ -154,6 +166,9 @@ const STATKI: LabelPreset = {
  * the desaturated gold the place names use, so it belongs to the map's palette
  * without being mistaken for one of them. The plate is a warm near-black so the
  * yellow stays warm; the frame is the text colour at 40%, as on a village.
+ *
+ * Drawn by its own style (see tabliczka.ts), whose shape setting in the label
+ * panel gives the plate arrow ends; the preset starts square.
  */
 const TABLICZKA: LabelPreset = {
   id: 'ark-przejscie-tabliczka',
@@ -163,7 +178,7 @@ const TABLICZKA: LabelPreset = {
   outlineColor: null,
   border: { width: 2, color: '#ffe45c66' },
   font: { family: 'Segoe UI', size: 60, bold: true, italic: false, underline: false, strikeout: false },
-  styleId: 'capsBigInitials',
+  styleId: TABLICZKA_STYLE.id,
   textAlign: 'center',
   padding: [24, 12],
   fitToText: true,
@@ -262,8 +277,12 @@ const plugin: EditorPlugin = {
     return [TERENY, POI];
   },
 
+  labelStyles() {
+    return [TABLICZKA_STYLE];
+  },
+
   labelPresets() {
-    return [MIASTA, WIOSKA, STATKI, TABLICZKA];
+    return [MIASTA, WIOSKA, WIOCHY, STATKI, TABLICZKA];
   },
 
   // The map's labels are drawn here, with styles, borders, padding and text
