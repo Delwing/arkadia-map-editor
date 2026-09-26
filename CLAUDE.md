@@ -46,6 +46,7 @@ Plugins live under `src/plugins/*/index.{ts,tsx}` and are discovered at runtime 
 - `toolbarActions(actions)` — reshape the toolbar's file-action buttons (used to repoint the save button)
 - `swatchSets()` — return terrain/POI palette arrays
 - `labelPresets()` — return label presets (font/colour/border/style bundles)
+- `onLabelPresetApplied(ctx)` — return extra commands recorded in the same undo step as a preset application
 - `sidebarTabs()` — return sidebar tab descriptors (`{ id, label, render }`)
 - `renderOverlay()` — return a React element rendered above the canvas (used for OAuth callback)
 
@@ -55,7 +56,7 @@ Adding a plugin: create `src/plugins/<name>/index.tsx` with a default `EditorPlu
 
 Combines three concerns:
 
-1. **Swatch sets and label presets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID, plus the label presets `MIASTA` / `WIOSKA` (gold Segoe UI caps, translucent frame, transparent background, cities a size up), `WIOCHY` (the village caps smaller, teal, no frame) and `STATKI` (yellow, plain, left-aligned, no frame) — all of them size their box to their own text, so multi-line names fit.
+1. **Swatch sets and label presets** — Polish terrain (`TERENY`, 19 types) and POI (`POI`, 23 types) palettes, each entry mapping a display label/symbol to a Mudlet environment ID, plus the label presets `MIASTA` / `WIOSKA` (gold Segoe UI caps, translucent frame, transparent background, cities a size up), `SZYL` (the village caps smaller, teal, no frame), `STATKI` (yellow, plain, left-aligned, no frame), the geographic names `NAZWA_GEOGRAFICZNA` / `WODY` (italic, no frame) and `KROLESTWO` (bold, behind a crown drawn by the `korona.ts` label style) — all of them size their box to their own text, so multi-line names fit. `onLabelPresetApplied` records the preset a label was last given as `arkadia.labelPreset_<labelId>` in area userData; the editor itself keeps no such record.
 2. **GitHub sync tab** — Delegates to `src/plugins/github-sync/GitHubPanel.tsx` as the sidebar tab and `OAuthCallback` as the overlay.
 3. **Game-client bridge** — `clientBridge.ts` + the "Klient" sidebar tab (`ClientTab.tsx`). See below.
 

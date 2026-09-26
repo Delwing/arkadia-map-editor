@@ -21,6 +21,7 @@ import { toolbarSave } from './saveFlow';
 import { announce, captureSceneRef, onMapClosed as clientBridgeMapClosed, startClientBridge } from './clientBridge';
 import { checkMap } from './mapChecks';
 import { TABLICZKA_STYLE } from './tabliczka';
+import { KORONA_STYLE } from './korona';
 import { en as arkadiaEn } from '../../i18n/locales/en';
 import { plArkadia } from '../../i18n/locales/pl';
 
@@ -134,10 +135,10 @@ const MIASTA: LabelPreset = {
 
 /** Hamlets: the village caps and margins, smaller, in teal and without a frame, so they
  *  read a step below a village rather than as one. Taken from the Łany label. */
-const WIOCHY: LabelPreset = {
+const SZYL: LabelPreset = {
   ...WIOSKA,
-  id: 'ark-wiochy',
-  name: 'Wiochy',
+  id: 'ark-szyl',
+  name: 'Szyl',
   fgColor: '#008080',
   border: null,
   font: { ...WIOSKA.font, size: 55 },
@@ -155,6 +156,46 @@ const STATKI: LabelPreset = {
   textAlign: 'left',
   padding: 10,
   fitToText: true,
+};
+
+/** Area userData key prefix recording the preset a label came from, as `arkadia.labelPreset_<labelId>`. */
+const LABEL_PRESET_KEY = 'arkadia.labelPreset_';
+
+/**
+ * Names on the land itself rather than on a settlement: plain text straight on
+ * the map, no frame or plate, told apart by colour and slant.
+ */
+const NAZWA_GEOGRAFICZNA: LabelPreset = {
+  id: 'ark-nazwa-geograficzna',
+  name: 'Nazwa geograficzna',
+  fgColor: '#c86432',
+  bgColor: '#00000000',
+  outlineColor: null,
+  border: null,
+  font: { family: 'Segoe UI', size: 60, bold: false, italic: true, underline: false, strikeout: false },
+  styleId: 'plain',
+  textAlign: 'center',
+  padding: 10,
+  fitToText: true,
+};
+
+/** Rivers, lakes and seas: the geographic name bigger, in water blue. */
+const WODY: LabelPreset = {
+  ...NAZWA_GEOGRAFICZNA,
+  id: 'ark-wody',
+  name: 'Rzeka / jezioro / morze',
+  fgColor: '#1e90ff',
+  font: { ...NAZWA_GEOGRAFICZNA.font, size: 80 },
+};
+
+/** Kingdoms and provinces: the largest name on the map, upright and bold, behind a crown. */
+const KROLESTWO: LabelPreset = {
+  ...NAZWA_GEOGRAFICZNA,
+  id: 'ark-krolestwo',
+  name: 'Królestwo / prowincja',
+  fgColor: '#c86405',
+  font: { ...NAZWA_GEOGRAFICZNA.font, size: 100, bold: true, italic: false },
+  styleId: KORONA_STYLE.id,
 };
 
 /**
@@ -278,11 +319,21 @@ const plugin: EditorPlugin = {
   },
 
   labelStyles() {
-    return [TABLICZKA_STYLE];
+    return [TABLICZKA_STYLE, KORONA_STYLE];
   },
 
   labelPresets() {
-    return [MIASTA, WIOSKA, WIOCHY, STATKI, TABLICZKA];
+    return [MIASTA, WIOSKA, SZYL, STATKI, NAZWA_GEOGRAFICZNA, WODY, KROLESTWO, TABLICZKA];
+  },
+
+  // Remember which preset a label was last given, next to the editor's own
+  // per-label keys in area userData. Recorded in the preset's own undo step;
+  // edits made to the label afterwards leave it in place.
+  onLabelPresetApplied({ preset, areaId, labelId, map }) {
+    const key = `${LABEL_PRESET_KEY}${labelId}`;
+    const from = map.areas[areaId]?.userData?.[key] ?? null;
+    if (from === preset.id) return;
+    return [{ kind: 'setAreaUserDataEntry', areaId, key, from, to: preset.id }];
   },
 
   // The map's labels are drawn here, with styles, borders, padding and text
